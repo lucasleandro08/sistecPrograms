@@ -9,9 +9,9 @@ Utilize o terminal splitado do vs ou dois terminais para rodar o projeto, facili
 - front-end : npm run dev
 - back-end : node src/index.js
 # Config do arquivo .env(crie ele na raíz do projeto):
-DB_USER=postgres
-DB_PASSWORD=DIGITE_SUA_SENHA
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=sistec(se mudar o nome na hora de criar tem que mudar aqui também)
+DB_USER=postgres <br>
+DB_PASSWORD=DIGITE_SUA_SENHA<br>
+DB_HOST=localhost<br>
+DB_PORT=5432<br>
+DB_NAME=sistec(se mudar o nome na hora de criar tem que mudar aqui também)<br>
 GEMINI_API_KEY=DIGITE_SUA_API
