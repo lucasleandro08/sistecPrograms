@@ -53,10 +53,6 @@ const login = async (email: string, password: string): Promise<boolean> => {
 
     const data = await response.json();
     
-    // ✅ ADICIONE ESTE LOG PARA VER O QUE VEM DO BACKEND
-    console.log('🔍 Resposta completa do backend:', data);
-    console.log('🔍 Dados do usuário do backend:', data.data?.user);
-    console.log('🔍 Perfil do backend:', data.data?.user?.perfil);
 
     if (response.ok && data.status === 200) {
       const userData: User = {
@@ -76,8 +72,6 @@ const login = async (email: string, password: string): Promise<boolean> => {
         }
       };
       
-      // ✅ ADICIONE ESTE LOG PARA VER O QUE ESTÁ SENDO SALVO
-      console.log('🔍 Dados que serão salvos:', userData);
       
       setUser(userData);
       localStorage.setItem('sistec_user', JSON.stringify(userData));
@@ -96,7 +90,6 @@ const login = async (email: string, password: string): Promise<boolean> => {
     localStorage.removeItem('sistec_user');
   };
 
-  // Verificar se há usuário logado no localStorage ao inicializar
   React.useEffect(() => {
     const savedUser = localStorage.getItem('sistec_user');
     if (savedUser) {

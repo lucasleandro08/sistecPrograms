@@ -2,8 +2,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Inicializar o Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// ✅ CORRIGIR: Declarar ambos os modelos
 const TRIAGEM_MODEL = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 const RESOLUCAO_MODEL = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
 // Serviço de triagem de chamados
@@ -80,7 +78,7 @@ export const triagemChamado = async (chamadoData) => {
   }
 };
 
-// Serviço de resolução automática - MELHORADO
+// Serviço de resolução automática
 export const resolverChamado = async (chamadoData, analiseTriagem) => {
   try {
     console.log('🤖 Gerando solução IA para chamado:', chamadoData.id_chamado);
@@ -117,12 +115,9 @@ export const resolverChamado = async (chamadoData, analiseTriagem) => {
     IMPORTANTE: Seja conciso e prático. Não inclua explicações técnicas desnecessárias.
     `;
 
-    // ✅ USAR O MODELO CORRETO
     const result = await RESOLUCAO_MODEL.generateContent(prompt);
     const response = await result.response;
     let solucao = response.text();
-    
-    // ✅ LIMITAR RESPOSTA SE MUITO LONGA
     if (solucao.length > 1200) {
       console.log('⚠️ Resposta muito longa, truncando...');
       solucao = solucao.substring(0, 1197) + '...';
