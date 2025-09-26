@@ -57,24 +57,27 @@ export const loginUser = async (req, res, next) => {
     req.session.userId = user.id_usuario;
     req.session.user = userData;
 
+    // Formato compatível com o frontend existente
     res.status(200).json({
       success: true,
       status: 200,
       message: 'Login realizado com sucesso',
-      user: {
-        id: user.id_usuario,
-        matricula: user.matricula,
-        name: user.nome_usuario,
-        email: user.email,
-        telefone: user.tel_usuarios,
-        setor: user.setor_usuario,
-        cargo: user.cargo_usuario,
-        id_aprovador: user.id_aprovador_usuario,
-        perfil: {
-          id: user.id_perfil_usuario,
-          nome: user.nome_perfil,           
-          nivel_acesso: user.nivel_acesso,  
-          descricao: user.descricao_perfil_usuario 
+      data: {
+        user: {
+          id: user.id_usuario,
+          matricula: user.matricula,
+          name: user.nome_usuario,
+          email: user.email,
+          telefone: user.tel_usuarios,
+          setor: user.setor_usuario,
+          cargo: user.cargo_usuario,
+          id_aprovador: user.id_aprovador_usuario,
+          perfil: {
+            id: user.id_perfil_usuario,
+            nome: user.nome_perfil,           
+            nivel_acesso: user.nivel_acesso,  
+            descricao: user.descricao_perfil_usuario 
+          }
         }
       }
     });
