@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
- "scripts": {
+  "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "vite",
     "dev:backend": "nodemon src/index.js --exec \"node -r dotenv/config\"",
@@ -53,6 +53,7 @@
     "dotenv": "^17.2.1",
     "embla-carousel-react": "^8.3.0",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.2.4",
     "jspdf": "^3.0.1",

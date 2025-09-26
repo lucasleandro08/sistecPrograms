@@ -1,29 +1,43 @@
 import express from 'express';
 import cors from 'cors';
+import session from 'express-session';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import chamadoRoutes from './routes/chamadoRoutes.js';
-import { errorHandler } from './middleware/errorHandler.js';
 import estatisticasRoutes from './routes/estatisticasRoutes.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middlewares
-app.use(cors());
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Rotas
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'sua-chave-secreta-super-segura-aqui',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chamados', chamadoRoutes);
 app.use('/api/estatisticas', estatisticasRoutes);
 
-
-// Middleware de tratamento de erros
 app.use(errorHandler);
 
-// Rota de teste
 app.get('/', (req, res) => {
   res.json({ 
     message: 'API funcionando!', 
