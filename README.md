@@ -5,9 +5,10 @@
 # Instalar as dependências:
 - npm i --save
 # Executar o projeto de fato
-Utilize o terminal splitado do vs ou dois terminais para rodar o projeto, facilita a vida XD
-- front-end : npm run dev
-- back-end : node src/index.js
+Foi criado uma ORM <br>
+rodar frontend e backend: npm run dev <br>
+rodar apenas frontend: npm run dev:frontend <br>
+rodar apenas backend: npm run dev:backend
 # Config do arquivo .env(crie ele na raíz do projeto):
 DB_USER=postgres <br>
 DB_PASSWORD=DIGITE_SUA_SENHA<br>
