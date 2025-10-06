@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+
 const formSchema = z.object({
   titulo: z.string().min(1, 'Título é obrigatório'),
   categoria: z.string().min(1, 'Categoria é obrigatória'),
@@ -18,7 +19,9 @@ const formSchema = z.object({
   anexo: z.any().optional(),
 });
 
+
 type FormData = z.infer<typeof formSchema>;
+
 
 interface Categoria {
   value: string;
@@ -26,16 +29,19 @@ interface Categoria {
   problemas: { value: string; label: string; }[];
 }
 
+
 interface NovoChamadoPopupProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
+
 
 export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('');
   const { user } = useAuth();
+
 
   const {
     register,
@@ -47,6 +53,110 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
+
+
+  // MutationObserver para forçar z-index do alertbox
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.id = 'alertbox-force-zindex';
+    style.innerHTML = `
+      .alertBoxBody,
+      .alertBoxBody *,
+      div[class*="alert"],
+      div[id*="alert"] {
+        z-index: 2147483647 !important;
+      }
+    `;
+    
+    // Remove estilo antigo se já existir
+    const oldStyle = document.getElementById('alertbox-force-zindex');
+    if (!oldStyle) {
+      document.head.appendChild(style);
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            const alertElements = [
+              node.querySelector('.alertBoxBody'),
+              node.querySelector('[class*="alertBox"]'),
+              node.querySelector('[id*="alertBox"]'),
+              node.classList?.contains('alertBoxBody') ? node : null,
+            ].filter(Boolean);
+
+            alertElements.forEach((el) => {
+              if (el instanceof HTMLElement) {
+                el.style.zIndex = '2147483647';
+                el.style.position = 'fixed';
+                el.style.top = '0';
+                el.style.left = '0';
+                el.style.width = '100%';
+                el.style.height = '100%';
+                
+                const children = el.querySelectorAll('*');
+                children.forEach((child) => {
+                  if (child instanceof HTMLElement) {
+                    child.style.zIndex = '2147483647';
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+
+  // Função auxiliar para exibir alertas
+  const showAlert = (type: 'success' | 'error' | 'warning', message: string) => {
+    if (typeof window !== 'undefined' && (window as any).alertbox) {
+      const config = {
+        success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
+        error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
+        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' }
+      };
+      
+      (window as any).alertbox.render({
+        ...config[type],
+        message: message,
+        btnTitle: 'Ok',
+        border: true
+      });
+
+      setTimeout(() => {
+        const alertBox = document.querySelector('.alertBoxBody') || 
+                        document.querySelector('[class*="alertBox"]') ||
+                        document.querySelector('[id*="alertBox"]');
+        
+        if (alertBox instanceof HTMLElement) {
+          alertBox.style.zIndex = '2147483647';
+          alertBox.style.position = 'fixed';
+          
+          const allElements = alertBox.querySelectorAll('*');
+          allElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              el.style.zIndex = '2147483647';
+            }
+          });
+        }
+      }, 50);
+      
+    } else {
+      alert(message);
+    }
+  };
+
 
   // Categorias e problemas baseados na estrutura do sistema
   const categorias: Categoria[] = [
@@ -140,8 +250,10 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
     }
   ];
 
+
   // Watch categoria para atualizar problemas
   const categoriaWatched = watch('categoria');
+
 
   // Resetar problema quando categoria mudar
   useEffect(() => {
@@ -151,14 +263,15 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
     }
   }, [categoriaWatched, selectedCategoria, setValue]);
 
+
   // Função para criar chamado
   const criarChamado = async (data: FormData) => {
     try {
       setIsLoading(true);
       setError('');
 
-      console.log('Criando chamado:', data);
-      console.log(' Usuário:', user?.email);
+      console.log('📝 Criando chamado:', data);
+      console.log('👤 Usuário:', user?.email);
 
       // Preparar dados para envio
       const chamadoData = {
@@ -168,7 +281,7 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
         descricao_detalhada: `Título: ${data.titulo}\n\nDescrição: ${data.descricao}`,
       };
 
-      console.log(' Dados enviados:', chamadoData);
+      console.log('📤 Dados enviados:', chamadoData);
 
       const response = await fetch('http://localhost:3001/api/chamados', {
         method: 'POST',
@@ -183,38 +296,49 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error(' Erro da API:', errorData);
+        console.error('❌ Erro da API:', errorData);
         throw new Error(errorData.message || 'Erro ao criar chamado');
       }
 
       const result = await response.json();
-      console.log('Chamado criado:', result);
+      console.log('✅ Chamado criado:', result);
 
-      // Callback de sucesso
-      if (onSuccess) {
-        onSuccess();
-      }
-
+      // Fechar modal e resetar formulário
       reset();
       onClose();
 
-      // Opcional: Mostrar notificação de sucesso
-      alert(`Chamado #${result.data?.id_chamado || 'XXX'} criado com sucesso!\nStatus: Aguardando aprovação do gestor.`);
+      // Aguardar fechar antes de mostrar alerta
+      setTimeout(() => {
+        showAlert(
+          'success',
+          `Chamado #${result.data?.id_chamado || 'XXX'} criado com sucesso!\n\nStatus: Aguardando aprovação do gestor.`
+        );
+
+        // Callback de sucesso após alerta
+        if (onSuccess) {
+          onSuccess();
+        }
+      }, 100);
 
     } catch (err: any) {
-      console.error(' Erro ao criar chamado:', err);
+      console.error('❌ Erro ao criar chamado:', err);
       setError(err.message || 'Erro inesperado ao criar chamado');
+      
+      showAlert('error', err.message || 'Erro inesperado ao criar chamado');
     } finally {
       setIsLoading(false);
     }
   };
 
+
   const onSubmit = async (data: FormData) => {
     await criarChamado(data);
   };
 
+
   // Obter problemas da categoria selecionada
   const problemasDisponiveis = categorias.find(cat => cat.value === categoriaWatched)?.problemas || [];
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

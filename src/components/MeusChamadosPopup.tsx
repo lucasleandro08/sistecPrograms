@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 
+
 interface Chamado {
   id_chamado: number;
   descricao_categoria_chamado: string;
@@ -18,6 +19,7 @@ interface Chamado {
   email_usuario?: string;
 }
 
+
 interface SolucaoIA {
   id_resposta_ia: number;
   fk_chamados_id_chamado: number;
@@ -29,9 +31,11 @@ interface SolucaoIA {
   data_feedback?: string;
 }
 
+
 interface MeusChamadosPopupProps {
   onClose: () => void;
 }
+
 
 export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [chamados, setChamados] = useState<Chamado[]>([]);
@@ -43,6 +47,110 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [enviandoFeedback, setEnviandoFeedback] = useState(false);
   const [loadingSolucao, setLoadingSolucao] = useState(false);
   const { user } = useAuth();
+
+
+  // MutationObserver para forçar z-index do alertbox
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.id = 'alertbox-force-zindex-meus-chamados';
+    style.innerHTML = `
+      .alertBoxBody,
+      .alertBoxBody *,
+      div[class*="alert"],
+      div[id*="alert"] {
+        z-index: 2147483647 !important;
+      }
+    `;
+    
+    const oldStyle = document.getElementById('alertbox-force-zindex-meus-chamados');
+    if (!oldStyle) {
+      document.head.appendChild(style);
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            const alertElements = [
+              node.querySelector('.alertBoxBody'),
+              node.querySelector('[class*="alertBox"]'),
+              node.querySelector('[id*="alertBox"]'),
+              node.classList?.contains('alertBoxBody') ? node : null,
+            ].filter(Boolean);
+
+            alertElements.forEach((el) => {
+              if (el instanceof HTMLElement) {
+                el.style.zIndex = '2147483647';
+                el.style.position = 'fixed';
+                el.style.top = '0';
+                el.style.left = '0';
+                el.style.width = '100%';
+                el.style.height = '100%';
+                
+                const children = el.querySelectorAll('*');
+                children.forEach((child) => {
+                  if (child instanceof HTMLElement) {
+                    child.style.zIndex = '2147483647';
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+
+  // Função auxiliar para exibir alertas
+  const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
+    if (typeof window !== 'undefined' && (window as any).alertbox) {
+      const config = {
+        success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
+        error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
+        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' },
+        info: { alertIcon: 'info' as const, title: 'Informação', themeColor: '#3b82f6', btnColor: '#60a5fa' }
+      };
+      
+      (window as any).alertbox.render({
+        ...config[type],
+        message: message,
+        btnTitle: 'Ok',
+        border: true
+      });
+
+      setTimeout(() => {
+        const alertBox = document.querySelector('.alertBoxBody') || 
+                        document.querySelector('[class*="alertBox"]') ||
+                        document.querySelector('[id*="alertBox"]');
+        
+        if (alertBox instanceof HTMLElement) {
+          alertBox.style.zIndex = '2147483647';
+          alertBox.style.position = 'fixed';
+          
+          const allElements = alertBox.querySelectorAll('*');
+          allElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              el.style.zIndex = '2147483647';
+            }
+          });
+        }
+      }, 50);
+      
+    } else {
+      alert(message);
+    }
+  };
+
 
   const fetchMeusChamados = async () => {
     try {
@@ -84,6 +192,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const buscarSolucaoIA = async (idChamado: number) => {
     try {
       setLoadingSolucao(true);
@@ -104,15 +213,16 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         setShowSolucaoIA(true);
       } else {
         const errorData = await response.json();
-        alert(`Erro ao buscar solução: ${errorData.message}`);
+        showAlert('error', `Erro ao buscar solução: ${errorData.message}`);
       }
     } catch (error) {
       console.error('Erro ao buscar solução IA:', error);
-      alert('Erro de conexão ao buscar solução da IA');
+      showAlert('error', 'Erro de conexão ao buscar solução da IA');
     } finally {
       setLoadingSolucao(false);
     }
   };
+
 
   const enviarFeedbackIA = async (feedback: 'DEU_CERTO' | 'DEU_ERRADO') => {
     if (!solucaoIA) return;
@@ -130,29 +240,41 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         body: JSON.stringify({ feedback }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (feedback === 'DEU_CERTO') {
-          alert('Ótimo! Seu chamado foi marcado como resolvido.');
+      // Fecha o modal de solução antes de mostrar alerta
+      setShowSolucaoIA(false);
+      setSolucaoIA(null);
+      setEnviandoFeedback(false);
+
+      setTimeout(() => {
+        if (response.ok) {
+          if (feedback === 'DEU_CERTO') {
+            showAlert('success', 'Ótimo! Seu chamado foi marcado como resolvido.');
+          } else {
+            showAlert('info', 'Seu chamado foi encaminhado para um analista humano que entrará em contato.');
+          }
+          fetchMeusChamados();
         } else {
-          alert('Seu chamado foi encaminhado para um analista humano que entrará em contato.');
+          response.json().then(errorData => {
+            showAlert('error', errorData.message || 'Erro ao enviar feedback');
+          }).catch(() => {
+            showAlert('error', 'Erro ao enviar feedback');
+          });
         }
-        
-        setShowSolucaoIA(false);
-        setSolucaoIA(null);
-        await fetchMeusChamados();
-      } else {
-        const errorData = await response.json();
-        alert(`Erro: ${errorData.message}`);
-      }
+      }, 100);
+
     } catch (error) {
       console.error('Erro ao enviar feedback:', error);
-      alert('Erro de conexão ao enviar feedback');
-    } finally {
+      
+      setShowSolucaoIA(false);
+      setSolucaoIA(null);
       setEnviandoFeedback(false);
+
+      setTimeout(() => {
+        showAlert('error', 'Erro de conexão ao enviar feedback');
+      }, 100);
     }
   };
+
 
   useEffect(() => {
     console.log('Componente montado, usuário:', user);
@@ -163,6 +285,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   }, [user]);
 
+
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return 'Data não disponível';
@@ -171,6 +294,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       return 'Data inválida';
     }
   };
+
 
   const getStatusColor = (status: string) => {
     if (!status || status === null || status === undefined) {
@@ -199,6 +323,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const getStatusIcon = (status: string) => {
     if (!status || status === null || status === undefined) {
       return <AlertCircle className="w-4 h-4" />;
@@ -220,6 +345,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const getPrioridadeColor = (prioridade: number) => {
     switch (prioridade) {
       case 1:
@@ -235,10 +361,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const getPrioridadeTexto = (prioridade: number) => {
     const textos: Record<number, string> = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
     return textos[prioridade] || 'Não definida';
   };
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -402,7 +530,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       </div>
 
       {selectedChamado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="bg-gray-800 text-white p-4 rounded-t-lg">
               <div className="flex items-center justify-between">
@@ -494,7 +622,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       )}
 
       {showSolucaoIA && solucaoIA && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-70 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] overflow-y-auto">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
               <div className="flex items-center justify-between">
@@ -530,10 +658,10 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                   💡 Instruções para resolver o problema:
                 </label>
                 <div className="bg-white border-2 border-blue-200 rounded-lg p-6 text-gray-800 shadow-inner prose prose-sm max-w-none">
-                    <ReactMarkdown>
-                        {solucaoIA.solucao_ia}
-                    </ReactMarkdown>
-                    </div>
+                  <ReactMarkdown>
+                    {solucaoIA.solucao_ia}
+                  </ReactMarkdown>
+                </div>
               </div>
 
               <div className="border-t-2 border-gray-200 pt-6">
@@ -557,7 +685,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                     ) : (
                       <CheckCircle className="w-6 h-6 mr-2" />
                     )}
-                     Deu Certo!
+                    ✅ Deu Certo!
                   </Button>
                   
                   <Button
@@ -571,7 +699,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                     ) : (
                       <XCircle className="w-6 h-6 mr-2" />
                     )}
-                     Não Funcionou
+                    ❌ Não Funcionou
                   </Button>
                 </div>
                 

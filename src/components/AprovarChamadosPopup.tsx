@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 
+
+
 interface ChamadoParaAprovacao {
   id_chamado: number;
   descricao_categoria_chamado: string;
@@ -17,9 +19,13 @@ interface ChamadoParaAprovacao {
   email_usuario: string;
 }
 
+
+
 interface AprovarChamadosPopupProps {
   onClose: () => void;
 }
+
+
 
 export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => {
   const [chamados, setChamados] = useState<ChamadoParaAprovacao[]>([]);
@@ -33,7 +39,110 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
   const [processando, setProcessando] = useState(false);
   const { user } = useAuth();
 
+
+
   const canApprovaChams = user?.perfil?.nivel_acesso >= 3;
+
+
+  // MutationObserver para forçar z-index do alertbox
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.id = 'alertbox-force-zindex';
+    style.innerHTML = `
+      .alertBoxBody,
+      .alertBoxBody *,
+      div[class*="alert"],
+      div[id*="alert"] {
+        z-index: 2147483647 !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            const alertElements = [
+              node.querySelector('.alertBoxBody'),
+              node.querySelector('[class*="alertBox"]'),
+              node.querySelector('[id*="alertBox"]'),
+              node.classList?.contains('alertBoxBody') ? node : null,
+            ].filter(Boolean);
+
+            alertElements.forEach((el) => {
+              if (el instanceof HTMLElement) {
+                el.style.zIndex = '2147483647';
+                el.style.position = 'fixed';
+                el.style.top = '0';
+                el.style.left = '0';
+                el.style.width = '100%';
+                el.style.height = '100%';
+                
+                const children = el.querySelectorAll('*');
+                children.forEach((child) => {
+                  if (child instanceof HTMLElement) {
+                    child.style.zIndex = '2147483647';
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observer.disconnect();
+      document.getElementById('alertbox-force-zindex')?.remove();
+    };
+  }, []);
+
+
+
+  const showAlert = (type: 'success' | 'error' | 'warning', message: string) => {
+    if (typeof window !== 'undefined' && (window as any).alertbox) {
+      const config = {
+        success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
+        error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
+        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' }
+      };
+      
+      (window as any).alertbox.render({
+        ...config[type],
+        message: message,
+        btnTitle: 'Ok',
+        border: true
+      });
+
+      setTimeout(() => {
+        const alertBox = document.querySelector('.alertBoxBody') || 
+                        document.querySelector('[class*="alertBox"]') ||
+                        document.querySelector('[id*="alertBox"]');
+        
+        if (alertBox instanceof HTMLElement) {
+          alertBox.style.zIndex = '2147483647';
+          alertBox.style.position = 'fixed';
+          
+          const allElements = alertBox.querySelectorAll('*');
+          allElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              el.style.zIndex = '2147483647';
+            }
+          });
+        }
+      }, 50);
+      
+    } else {
+      alert(message);
+    }
+  };
+
+
 
   const fetchChamadosParaAprovacao = async () => {
     try {
@@ -63,16 +172,22 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     }
   };
 
+
+
   useEffect(() => {
     if (user?.email && canApprovaChams) {
       fetchChamadosParaAprovacao();
     }
   }, [user, canApprovaChams]);
 
+
+
   const handleAprovarClick = (idChamado: number) => {
     setChamadoToApprove(idChamado);
     setShowConfirmModal(true);
   };
+
+
 
   const handleConfirmAprovar = async () => {
     if (!chamadoToApprove) return;
@@ -88,27 +203,43 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
         },
       });
 
-      if (response.ok) {
-        alert('Chamado aprovado com sucesso!');
-        fetchChamadosParaAprovacao();
-        setSelectedChamado(null);
-      } else {
-        const errorData = await response.json();
-        alert(`Erro: ${errorData.message}`);
-      }
+      setShowConfirmModal(false);
+      setSelectedChamado(null);
+      setChamadoToApprove(null);
+      setProcessando(false);
+
+      setTimeout(() => {
+        if (response.ok) {
+          showAlert('success', 'Chamado aprovado com sucesso!');
+          fetchChamadosParaAprovacao();
+        } else {
+          response.json().then(errorData => {
+            showAlert('error', errorData.message || 'Erro ao aprovar chamado');
+          }).catch(() => {
+            showAlert('error', 'Erro ao aprovar chamado');
+          });
+        }
+      }, 100);
+
     } catch (error) {
       console.error('Erro ao aprovar chamado:', error);
-      alert('Erro de conexão ao aprovar chamado');
-    } finally {
-      setProcessando(false);
+      
       setShowConfirmModal(false);
+      setSelectedChamado(null);
       setChamadoToApprove(null);
+      setProcessando(false);
+
+      setTimeout(() => {
+        showAlert('error', 'Erro de conexão ao aprovar chamado');
+      }, 100);
     }
   };
 
+
+
   const handleRejeitar = async () => {
     if (!selectedChamado || !motivoRejeicao.trim() || motivoRejeicao.trim().length < 10) {
-      alert('Motivo da rejeição deve ter pelo menos 10 caracteres');
+      showAlert('warning', 'Motivo da rejeição deve ter pelo menos 10 caracteres');
       return;
     }
 
@@ -124,23 +255,39 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
         body: JSON.stringify({ motivo: motivoRejeicao.trim() }),
       });
 
-      if (response.ok) {
-        alert('Chamado rejeitado com sucesso!');
-        fetchChamadosParaAprovacao();
-        setSelectedChamado(null);
-        setShowRejectModal(false);
-        setMotivoRejeicao('');
-      } else {
-        const errorData = await response.json();
-        alert(`Erro: ${errorData.message}`);
-      }
+      setShowRejectModal(false);
+      setSelectedChamado(null);
+      setMotivoRejeicao('');
+      setProcessando(false);
+
+      setTimeout(() => {
+        if (response.ok) {
+          showAlert('success', 'Chamado rejeitado com sucesso!');
+          fetchChamadosParaAprovacao();
+        } else {
+          response.json().then(errorData => {
+            showAlert('error', errorData.message || 'Erro ao rejeitar chamado');
+          }).catch(() => {
+            showAlert('error', 'Erro ao rejeitar chamado');
+          });
+        }
+      }, 100);
+
     } catch (error) {
       console.error('Erro ao rejeitar chamado:', error);
-      alert('Erro de conexão ao rejeitar chamado');
-    } finally {
+      
+      setShowRejectModal(false);
+      setSelectedChamado(null);
+      setMotivoRejeicao('');
       setProcessando(false);
+
+      setTimeout(() => {
+        showAlert('error', 'Erro de conexão ao rejeitar chamado');
+      }, 100);
     }
   };
+
+
 
   if (!canApprovaChams) {
     return (
@@ -163,9 +310,13 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     );
   }
 
+
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('pt-BR');
   };
+
+
 
   const getPrioridadeColor = (prioridade: number) => {
     switch (prioridade) {
@@ -177,10 +328,14 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     }
   };
 
+
+
   const getPrioridadeTexto = (prioridade: number) => {
     const textos = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
     return textos[prioridade] || 'Não definida';
   };
+
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -326,7 +481,7 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
       </div>
 
       {showConfirmModal && chamadoToApprove && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="bg-orange-600 text-white p-4 rounded-t-lg">
               <div className="flex items-center gap-2">
@@ -383,7 +538,7 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
       )}
 
       {selectedChamado && !showRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="bg-gray-800 text-white p-4 rounded-t-lg">
               <div className="flex items-center justify-between">
@@ -471,7 +626,7 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
       )}
 
       {showRejectModal && selectedChamado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-70 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="bg-red-600 text-white p-4 rounded-t-lg">
               <h3 className="text-lg font-bold">Rejeitar Chamado #{selectedChamado.id_chamado}</h3>

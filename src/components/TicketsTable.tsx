@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, CheckCircle, AlertTriangle, Clock, Calendar, Search, TrendingUp, X } from 'lucide-react';
+import { Eye, CheckCircle, AlertTriangle, Clock, Calendar, Search, TrendingUp, X, ArrowUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Chamado {
@@ -19,7 +19,6 @@ interface Chamado {
   titulo_chamado?: string; 
 }
 
-// Interface para chamados escalados
 interface ChamadoEscalado {
   id_chamado: number;
   descricao_categoria_chamado: string;
@@ -41,7 +40,7 @@ export const TicketsTable = () => {
   const [showDetalhes, setShowDetalhes] = useState(false);
   const [showEscalarModal, setShowEscalarModal] = useState(false);
   const [showEscaladosModal, setShowEscaladosModal] = useState(false);
-  
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
 
   const [showConfirmResolverModal, setShowConfirmResolverModal] = useState(false);
   const [showConfirmResolverEscaladoModal, setShowConfirmResolverEscaladoModal] = useState(false);
@@ -53,12 +52,32 @@ export const TicketsTable = () => {
   const [processando, setProcessando] = useState(false);
   const { user } = useAuth();
 
-  // Verificar permissões do usuário
   const isUsuarioComum = user?.perfil?.nivel_acesso === 1;
   const isAnalista = user?.perfil?.nivel_acesso >= 2;
   const isGestor = user?.perfil?.nivel_acesso >= 3;
 
-  // Buscar chamados
+  // Detectar scroll para mostrar/ocultar botão "Voltar ao Topo"
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollToTop(true);
+      } else {
+        setShowScrollToTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Função para rolar ao topo
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   const fetchChamados = async () => {
     try {
       setIsLoading(true);
@@ -93,7 +112,6 @@ export const TicketsTable = () => {
     }
   };
 
-  // Buscar chamados escalados
   const fetchChamadosEscalados = async () => {
     try {
       const response = await fetch('http://localhost:3001/api/chamados/escalados', {
@@ -108,7 +126,7 @@ export const TicketsTable = () => {
         setChamadosEscalados(data.data || []);
       }
     } catch (error) {
-      console.error(' Erro ao buscar chamados escalados:', error);
+      console.error('Erro ao buscar chamados escalados:', error);
     }
   };
 
@@ -117,7 +135,6 @@ export const TicketsTable = () => {
     setShowConfirmResolverEscaladoModal(true);
   };
 
-  // Resolver chamado escalado (após confirmação)
   const resolverChamadoEscalado = async () => {
     if (!chamadoEscaladoToResolve) return;
 
@@ -141,7 +158,7 @@ export const TicketsTable = () => {
         alert(`Erro: ${errorData.message}`);
       }
     } catch (error) {
-      console.error(' Erro ao resolver chamado escalado:', error);
+      console.error('Erro ao resolver chamado escalado:', error);
       alert('Erro de conexão');
     } finally {
       setProcessando(false);
@@ -170,7 +187,7 @@ export const TicketsTable = () => {
       });
 
       if (response.ok) {
-        alert(' Chamado marcado como resolvido com sucesso!');
+        alert('Chamado marcado como resolvido com sucesso!');
         await fetchChamados();
         setSelectedChamado(null);
         setShowDetalhes(false);
@@ -179,7 +196,7 @@ export const TicketsTable = () => {
         alert(`Erro: ${errorData.message}`);
       }
     } catch (error) {
-      console.error(' Erro ao resolver chamado:', error);
+      console.error('Erro ao resolver chamado:', error);
       alert('Erro de conexão');
     } finally {
       setProcessando(false);
@@ -213,7 +230,7 @@ export const TicketsTable = () => {
       });
 
       if (response.ok) {
-        alert(' Chamado escalado para gerente com sucesso!');
+        alert('Chamado escalado para gerente com sucesso!');
         await fetchChamados();
         setShowConfirmEscalarModal(false);
         setSelectedChamado(null);
@@ -224,7 +241,7 @@ export const TicketsTable = () => {
         alert(`Erro: ${errorData.message}`);
       }
     } catch (error) {
-      console.error(' Erro ao escalar chamado:', error);
+      console.error('Erro ao escalar chamado:', error);
       alert('Erro de conexão');
     } finally {
       setProcessando(false);
@@ -237,7 +254,6 @@ export const TicketsTable = () => {
     }
   }, [user]);
 
-  // Funções auxiliares
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleString('pt-BR');
@@ -278,7 +294,6 @@ export const TicketsTable = () => {
     }
   };
 
-  // Filtrar chamados
   const filteredChamados = chamados.filter(chamado =>
     chamado.id_chamado.toString().includes(searchTerm) ||
     chamado.descricao_categoria_chamado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -287,138 +302,415 @@ export const TicketsTable = () => {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              {isUsuarioComum ? 'Meus Chamados Recentes' : 'Chamados Recentes'}
-            </h2>
-            {isUsuarioComum && (
-              <p className="text-sm text-gray-500 mt-1">Mostrando seus 3 chamados mais recentes</p>
-            )}
+    <>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {isUsuarioComum ? 'Meus Chamados Recentes' : 'Chamados Recentes'}
+              </h2>
+              {isUsuarioComum && (
+                <p className="text-sm text-gray-500 mt-1">Mostrando seus 3 chamados mais recentes</p>
+              )}
+            </div>
+            
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Pesquisar chamados..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              {isGestor && (
+                <Button
+                  onClick={() => {
+                    setShowEscaladosModal(true);
+                    fetchChamadosEscalados();
+                  }}
+                  variant="outline"
+                  className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 border-purple-200"
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Ver Escalados
+                </Button>
+              )}
+
+              <Button
+                onClick={fetchChamados}
+                variant="outline"
+                className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
+              >
+                Atualizar
+              </Button>
+            </div>
           </div>
-          
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Pesquisar chamados..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
+        </div>
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && !isLoading && (
+          <div className="p-6 bg-red-50 border border-red-200 text-red-700">
+            <p className="font-semibold">Erro:</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Table */}
+        {!isLoading && !error && (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">ID</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Categoria</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Usuário</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Prioridade</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Status</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Criado em</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredChamados.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                        Nenhum chamado encontrado
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredChamados.map((chamado) => (
+                      <tr key={chamado.id_chamado} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          #{chamado.id_chamado}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {chamado.descricao_categoria_chamado || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {chamado.usuario_abertura || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge className={getPrioridadeColor(chamado.prioridade_chamado)}>
+                            {getPrioridadeTexto(chamado.prioridade_chamado)}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge className={getStatusColor(chamado.descricao_status_chamado)}>
+                            {chamado.descricao_status_chamado || 'N/A'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {formatDate(chamado.data_abertura)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={() => {
+                                setSelectedChamado(chamado);
+                                setShowDetalhes(true);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+
+                            {isAnalista && chamado.descricao_status_chamado === 'Com Analista' && (
+                              <>
+                                <Button
+                                  onClick={() => handleConfirmarResolver(chamado.id_chamado)}
+                                  disabled={processando}
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Resolver
+                                </Button>
+                                
+                                <Button
+                                  onClick={() => {
+                                    setSelectedChamado(chamado);
+                                    setShowEscalarModal(true);
+                                  }}
+                                  disabled={processando}
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
+                                >
+                                  <AlertTriangle className="w-4 h-4 mr-1" />
+                                  Escalar
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
 
-            {isGestor && (
-              <Button
-                onClick={() => {
-                  setShowEscaladosModal(true);
-                  fetchChamadosEscalados();
-                }}
-                variant="outline"
-                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 border-purple-200"
-              >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Ver Escalados
-              </Button>
-            )}
+            <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-600">
+                {isUsuarioComum 
+                  ? `Mostrando ${filteredChamados.length} de seus chamados mais recentes`
+                  : `${filteredChamados.length} chamados encontrados`
+                }
+              </div>
+              {!isUsuarioComum && (
+                <div className="text-xs text-gray-500">
+                  👥 Usuários comuns veem apenas 3 chamados mais recentes
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
-            <Button
-              onClick={fetchChamados}
-              variant="outline"
-              className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
-            >
-              Atualizar
-            </Button>
+        {/* Todos os modais existentes continuam aqui... */}
+        {/* (showConfirmResolverModal, showConfirmResolverEscaladoModal, showConfirmEscalarModal, etc.) */}
+        {showConfirmResolverModal && chamadoToResolve && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+              <div className="bg-green-600 text-white p-4 rounded-t-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6" />
+                  <h3 className="text-lg font-bold">Confirmar Fechamento</h3>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="text-center">
+                  <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Tem certeza que quer fechar o chamado?
+                  </h4>
+                  <div className="bg-gray-50 rounded-lg p-4 text-left">
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Chamado:</strong> #{chamadoToResolve}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Esta ação marcará o chamado como resolvido e não poderá ser desfeita.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowConfirmResolverModal(false);
+                      setChamadoToResolve(null);
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={processando}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={marcarComoResolvido}
+                    disabled={processando}
+                    className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {processando ? 'Fechando...' : 'Sim, Fechar'}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="flex justify-center items-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-        </div>
-      )}
+        {showConfirmResolverEscaladoModal && chamadoEscaladoToResolve && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+              <div className="bg-green-600 text-white p-4 rounded-t-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6" />
+                  <h3 className="text-lg font-bold">Confirmar Fechamento</h3>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="text-center">
+                  <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Tem certeza que quer fechar o chamado?
+                  </h4>
+                  <div className="bg-gray-50 rounded-lg p-4 text-left">
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Chamado Escalado:</strong> #{chamadoEscaladoToResolve}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Esta ação resolverá o chamado escalado e não poderá ser desfeita.
+                    </p>
+                  </div>
+                </div>
 
-      {/* Error */}
-      {error && !isLoading && (
-        <div className="p-6 bg-red-50 border border-red-200 text-red-700">
-          <p className="font-semibold">Erro:</p>
-          <p>{error}</p>
-        </div>
-      )}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowConfirmResolverEscaladoModal(false);
+                      setChamadoEscaladoToResolve(null);
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={processando}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={resolverChamadoEscalado}
+                    disabled={processando}
+                    className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {processando ? 'Fechando...' : 'Sim, Fechar'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-      {/* Table */}
-      {!isLoading && !error && (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">ID</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Categoria</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Usuário</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Prioridade</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Criado em</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredChamados.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                      Nenhum chamado encontrado
-                    </td>
-                  </tr>
+        {showConfirmEscalarModal && selectedChamado && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+              <div className="bg-orange-600 text-white p-4 rounded-t-lg">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-6 h-6" />
+                  <h3 className="text-lg font-bold">Confirmar Escalonamento</h3>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="text-center">
+                  <TrendingUp className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Tem certeza que deseja escalar este chamado?
+                  </h4>
+                  <div className="bg-gray-50 rounded-lg p-4 text-left">
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Chamado:</strong> #{selectedChamado.id_chamado}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Motivo:</strong> {motivoEscalar}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      O chamado será enviado para análise do gerente.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowConfirmEscalarModal(false);
+                      setShowEscalarModal(true);
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={processando}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    onClick={escalarParaGerente}
+                    disabled={processando}
+                    className="bg-orange-600 hover:bg-orange-700 text-white flex-1"
+                  >
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    {processando ? 'Escalando...' : 'Sim, Escalar'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Chamados Escalados */}
+        {showEscaladosModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-purple-600 text-white p-4 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold">
+                    📈 Chamados Escalados ({chamadosEscalados.length})
+                  </h3>
+                  <Button
+                    onClick={() => setShowEscaladosModal(false)}
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-purple-700"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+                <p className="text-purple-100 text-sm mt-1">
+                  Chamados escalados pelos analistas que precisam de resolução gerencial
+                </p>
+              </div>
+              
+              <div className="p-6">
+                {chamadosEscalados.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>Nenhum chamado escalado no momento</p>
+                    <p className="text-sm">Todos os chamados escalados foram resolvidos</p>
+                  </div>
                 ) : (
-                  filteredChamados.map((chamado) => (
-                    <tr key={chamado.id_chamado} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        #{chamado.id_chamado}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {chamado.descricao_categoria_chamado || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {chamado.usuario_abertura || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge className={getPrioridadeColor(chamado.prioridade_chamado)}>
-                          {getPrioridadeTexto(chamado.prioridade_chamado)}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge className={getStatusColor(chamado.descricao_status_chamado)}>
-                          {chamado.descricao_status_chamado || 'N/A'}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(chamado.data_abertura)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            onClick={() => {
-                              setSelectedChamado(chamado);
-                              setShowDetalhes(true);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-
-                          {isAnalista && chamado.descricao_status_chamado === 'Com Analista' && (
-                            <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">ID</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Título</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Categoria</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Solicitante</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Prioridade</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Data</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {chamadosEscalados.map((chamado) => (
+                          <tr key={chamado.id_chamado} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              #{chamado.id_chamado}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              {chamado.titulo_chamado || 'Sem título'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {chamado.descricao_categoria_chamado}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {chamado.usuario_abertura}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge className={getPrioridadeColor(chamado.prioridade_chamado)}>
+                                {getPrioridadeTexto(chamado.prioridade_chamado)}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {formatDate(chamado.data_abertura)}
+                            </td>
+                            <td className="px-4 py-3">
                               <Button
-                                onClick={() => handleConfirmarResolver(chamado.id_chamado)}
+                                onClick={() => handleConfirmarResolverEscalado(chamado.id_chamado)}
                                 disabled={processando}
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -426,445 +718,194 @@ export const TicketsTable = () => {
                                 <CheckCircle className="w-4 h-4 mr-1" />
                                 Resolver
                               </Button>
-                              
-                              <Button
-                                onClick={() => {
-                                  setSelectedChamado(chamado);
-                                  setShowEscalarModal(true);
-                                }}
-                                disabled={processando}
-                                variant="outline"
-                                size="sm"
-                                className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
-                              >
-                                <AlertTriangle className="w-4 h-4 mr-1" />
-                                Escalar
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
-            <div className="text-sm text-gray-600">
-              {isUsuarioComum 
-                ? `Mostrando ${filteredChamados.length} de seus chamados mais recentes`
-                : `${filteredChamados.length} chamados encontrados`
-              }
-            </div>
-            {!isUsuarioComum && (
-              <div className="text-xs text-gray-500">
-                👥 Usuários comuns veem apenas 3 chamados mais recentes
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {showConfirmResolverModal && chamadoToResolve && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="bg-green-600 text-white p-4 rounded-t-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-6 h-6" />
-                <h3 className="text-lg font-bold">Confirmar Fechamento</h3>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="text-center">
-                <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Tem certeza que quer fechar o chamado?
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-4 text-left">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Chamado:</strong> #{chamadoToResolve}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Esta ação marcará o chamado como resolvido e não poderá ser desfeita.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={() => {
-                    setShowConfirmResolverModal(false);
-                    setChamadoToResolve(null);
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={processando}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={marcarComoResolvido}
-                  disabled={processando}
-                  className="bg-green-600 hover:bg-green-700 text-white flex-1"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  {processando ? 'Fechando...' : 'Sim, Fechar'}
-                </Button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showConfirmResolverEscaladoModal && chamadoEscaladoToResolve && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="bg-green-600 text-white p-4 rounded-t-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-6 h-6" />
-                <h3 className="text-lg font-bold">Confirmar Fechamento</h3>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="text-center">
-                <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Tem certeza que quer fechar o chamado?
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-4 text-left">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Chamado Escalado:</strong> #{chamadoEscaladoToResolve}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Esta ação resolverá o chamado escalado e não poderá ser desfeita.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={() => {
-                    setShowConfirmResolverEscaladoModal(false);
-                    setChamadoEscaladoToResolve(null);
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={processando}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={resolverChamadoEscalado}
-                  disabled={processando}
-                  className="bg-green-600 hover:bg-green-700 text-white flex-1"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  {processando ? 'Fechando...' : 'Sim, Fechar'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showConfirmEscalarModal && selectedChamado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="bg-orange-600 text-white p-4 rounded-t-lg">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-6 h-6" />
-                <h3 className="text-lg font-bold">Confirmar Escalonamento</h3>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="text-center">
-                <TrendingUp className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Tem certeza que deseja escalar este chamado?
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-4 text-left">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Chamado:</strong> #{selectedChamado.id_chamado}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Motivo:</strong> {motivoEscalar}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    O chamado será enviado para análise do gerente.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={() => {
-                    setShowConfirmEscalarModal(false);
-                    setShowEscalarModal(true); // Volta para o modal de motivo
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={processando}
-                >
-                  Voltar
-                </Button>
-                <Button
-                  onClick={escalarParaGerente}
-                  disabled={processando}
-                  className="bg-orange-600 hover:bg-orange-700 text-white flex-1"
-                >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  {processando ? 'Escalando...' : 'Sim, Escalar'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DE CHAMADOS ESCALADOS */}
-      {showEscaladosModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-purple-600 text-white p-4 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">
-                  📈 Chamados Escalados ({chamadosEscalados.length})
-                </h3>
-                <Button
-                  onClick={() => setShowEscaladosModal(false)}
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-purple-700"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-              <p className="text-purple-100 text-sm mt-1">
-                Chamados escalados pelos analistas que precisam de resolução gerencial
-              </p>
-            </div>
-            
-            <div className="p-6">
-              {chamadosEscalados.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>Nenhum chamado escalado no momento</p>
-                  <p className="text-sm">Todos os chamados escalados foram resolvidos</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">ID</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Título</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Categoria</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Solicitante</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Prioridade</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Data</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {chamadosEscalados.map((chamado) => (
-                        <tr key={chamado.id_chamado} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            #{chamado.id_chamado}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {chamado.titulo_chamado || 'Sem título'}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {chamado.descricao_categoria_chamado}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {chamado.usuario_abertura}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge className={getPrioridadeColor(chamado.prioridade_chamado)}>
-                              {getPrioridadeTexto(chamado.prioridade_chamado)}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {formatDate(chamado.data_abertura)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Button
-                              onClick={() => handleConfirmarResolverEscalado(chamado.id_chamado)}
-                              disabled={processando}
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Resolver
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {showDetalhes && selectedChamado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="bg-gray-800 text-white p-4 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">
-                  Detalhes do Chamado #{selectedChamado.id_chamado}
-                </h3>
-                <Button
-                  onClick={() => {
-                    setShowDetalhes(false);
-                    setSelectedChamado(null);
-                  }}
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-gray-700"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <Badge className={getStatusColor(selectedChamado.descricao_status_chamado)}>
-                    {selectedChamado.descricao_status_chamado}
-                  </Badge>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
-                  <Badge className={getPrioridadeColor(selectedChamado.prioridade_chamado)}>
-                    {getPrioridadeTexto(selectedChamado.prioridade_chamado)}
-                  </Badge>
+        {showDetalhes && selectedChamado && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="bg-gray-800 text-white p-4 rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold">
+                    Detalhes do Chamado #{selectedChamado.id_chamado}
+                  </h3>
+                  <Button
+                    onClick={() => {
+                      setShowDetalhes(false);
+                      setSelectedChamado(null);
+                    }}
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-gray-700"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
                 </div>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
-                  <p className="text-gray-600">{selectedChamado.usuario_abertura}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <p className="text-gray-600">{selectedChamado.email_usuario}</p>
-                </div>
-              </div>
-              {selectedChamado.titulo_chamado && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                  <p className="text-gray-600 font-medium">{selectedChamado.titulo_chamado}</p>
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                <p className="text-gray-600">{selectedChamado.descricao_categoria_chamado}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Problema</label>
-                <p className="text-gray-600">{selectedChamado.descricao_problema_chamado}</p>
-              </div>
-              {selectedChamado.descricao_detalhada && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição Detalhada</label>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
-                      {selectedChamado.descricao_detalhada}
-                    </div>
+              <div className="p-6 space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <Badge className={getStatusColor(selectedChamado.descricao_status_chamado)}>
+                      {selectedChamado.descricao_status_chamado}
+                    </Badge>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
+                    <Badge className={getPrioridadeColor(selectedChamado.prioridade_chamado)}>
+                      {getPrioridadeTexto(selectedChamado.prioridade_chamado)}
+                    </Badge>
                   </div>
                 </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data de Abertura</label>
-                <p className="text-gray-600 flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {formatDate(selectedChamado.data_abertura)}
-                </p>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
+                    <p className="text-gray-600">{selectedChamado.usuario_abertura}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <p className="text-gray-600">{selectedChamado.email_usuario}</p>
+                  </div>
+                </div>
+
+                {selectedChamado.titulo_chamado && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                    <p className="text-gray-600 font-medium">{selectedChamado.titulo_chamado}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                  <p className="text-gray-600">{selectedChamado.descricao_categoria_chamado}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Problema</label>
+                  <p className="text-gray-600">{selectedChamado.descricao_problema_chamado}</p>
+                </div>
+
+                {selectedChamado.descricao_detalhada && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Descrição Detalhada</label>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                        {selectedChamado.descricao_detalhada}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Data de Abertura</label>
+                  <p className="text-gray-600 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {formatDate(selectedChamado.data_abertura)}
+                  </p>
+                </div>
+
+                {isAnalista && selectedChamado.descricao_status_chamado === 'Com Analista' && (
+                  <div className="flex gap-4 pt-4 border-t">
+                    <Button
+                      onClick={() => handleConfirmarResolver(selectedChamado.id_chamado)}
+                      disabled={processando}
+                      className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Marcar como Resolvido
+                    </Button>
+                    <Button
+                      onClick={() => setShowEscalarModal(true)}
+                      disabled={processando}
+                      variant="outline"
+                      className="text-orange-600 hover:text-orange-800 hover:bg-orange-50 flex-1"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Escalar para Gerente
+                    </Button>
+                  </div>
+                )}
               </div>
-              {isAnalista && selectedChamado.descricao_status_chamado === 'Com Analista' && (
-                <div className="flex gap-4 pt-4 border-t">
-                  <Button
-                    onClick={() => handleConfirmarResolver(selectedChamado.id_chamado)}
+            </div>
+          </div>
+        )}
+
+        {showEscalarModal && selectedChamado && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+              <div className="bg-orange-600 text-white p-4 rounded-t-lg">
+                <h3 className="text-lg font-bold">Escalar Chamado #{selectedChamado.id_chamado}</h3>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Motivo do Escalonamento <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={motivoEscalar}
+                    onChange={(e) => setMotivoEscalar(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
+                    placeholder="Descreva o motivo do escalonamento para o gerente..."
                     disabled={processando}
-                    className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                  />
+                  <p className="text-gray-500 text-xs mt-1">
+                    {motivoEscalar.length}/10 caracteres mínimos
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      setShowEscalarModal(false);
+                      setMotivoEscalar('');
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={processando}
                   >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Marcar como Resolvido
+                    Cancelar
                   </Button>
                   <Button
-                    onClick={() => setShowEscalarModal(true)}
-                    disabled={processando}
-                    variant="outline"
-                    className="text-orange-600 hover:text-orange-800 hover:bg-orange-50 flex-1"
+                    onClick={handleConfirmarEscalar}
+                    disabled={processando || motivoEscalar.trim().length < 10}
+                    className="bg-orange-600 hover:bg-orange-700 text-white flex-1"
                   >
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    Escalar para Gerente
+                    Escalar Chamado
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      {showEscalarModal && selectedChamado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="bg-orange-600 text-white p-4 rounded-t-lg">
-              <h3 className="text-lg font-bold">Escalar Chamado #{selectedChamado.id_chamado}</h3>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Motivo do Escalonamento <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={motivoEscalar}
-                  onChange={(e) => setMotivoEscalar(e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-vertical"
-                  placeholder="Descreva o motivo do escalonamento para o gerente..."
-                  disabled={processando}
-                />
-                <p className="text-gray-500 text-xs mt-1">
-                  {motivoEscalar.length}/10 caracteres mínimos
-                </p>
-              </div>
+        )}
+      </div>
 
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => {
-                    setShowEscalarModal(false);
-                    setMotivoEscalar('');
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={processando}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleConfirmarEscalar} 
-                  disabled={processando || motivoEscalar.trim().length < 10}
-                  className="bg-orange-600 hover:bg-orange-700 text-white flex-1"
-                >
-                  Escalar Chamado
-                </Button>
-              </div>
+            {/* Botão Voltar ao Topo */}
+          {showScrollToTop && (
+            <div className="fixed bottom-6 left-20 flex flex-col items-center z-50">
+              <button
+                onClick={scrollToTop}
+                className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 mb-2"
+                aria-label="Voltar ao topo"
+              >
+                <ArrowUp className="w-5 h-5" />
+              </button>
+              <span className="text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">
+                Voltar ao topo
+              </span>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          )}
+              </>
   );
 };
