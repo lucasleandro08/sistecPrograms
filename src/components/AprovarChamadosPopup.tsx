@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 
-
-
 interface ChamadoParaAprovacao {
   id_chamado: number;
   descricao_categoria_chamado: string;
@@ -19,13 +17,9 @@ interface ChamadoParaAprovacao {
   email_usuario: string;
 }
 
-
-
 interface AprovarChamadosPopupProps {
   onClose: () => void;
 }
-
-
 
 export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => {
   const [chamados, setChamados] = useState<ChamadoParaAprovacao[]>([]);
@@ -39,10 +33,7 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
   const [processando, setProcessando] = useState(false);
   const { user } = useAuth();
 
-
-
   const canApprovaChams = user?.perfil?.nivel_acesso >= 3;
-
 
   // MutationObserver para forçar z-index do alertbox
   useEffect(() => {
@@ -102,8 +93,6 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     };
   }, []);
 
-
-
   const showAlert = (type: 'success' | 'error' | 'warning', message: string) => {
     if (typeof window !== 'undefined' && (window as any).alertbox) {
       const config = {
@@ -142,8 +131,6 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     }
   };
 
-
-
   const fetchChamadosParaAprovacao = async () => {
     try {
       setIsLoading(true);
@@ -172,22 +159,16 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     }
   };
 
-
-
   useEffect(() => {
     if (user?.email && canApprovaChams) {
       fetchChamadosParaAprovacao();
     }
   }, [user, canApprovaChams]);
 
-
-
   const handleAprovarClick = (idChamado: number) => {
     setChamadoToApprove(idChamado);
     setShowConfirmModal(true);
   };
-
-
 
   const handleConfirmAprovar = async () => {
     if (!chamadoToApprove) return;
@@ -234,8 +215,6 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
       }, 100);
     }
   };
-
-
 
   const handleRejeitar = async () => {
     if (!selectedChamado || !motivoRejeicao.trim() || motivoRejeicao.trim().length < 10) {
@@ -287,8 +266,6 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     }
   };
 
-
-
   if (!canApprovaChams) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -310,13 +287,9 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     );
   }
 
-
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('pt-BR');
   };
-
-
 
   const getPrioridadeColor = (prioridade: number) => {
     switch (prioridade) {
@@ -328,19 +301,17 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
     }
   };
 
-
-
   const getPrioridadeTexto = (prioridade: number) => {
     const textos = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
     return textos[prioridade] || 'Não definida';
   };
 
-
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="bg-gray-900 text-white p-6 rounded-t-lg">
+      {/* MODAL PRINCIPAL - Aprovar Chamados */}
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+        {/* CABEÇALHO FIXO */}
+        <div className="bg-gray-900 text-white p-6 rounded-t-lg flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Aprovar Chamados</h2>
@@ -357,7 +328,8 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
           </div>
         </div>
 
-        <div className="p-6">
+        {/* CONTEÚDO ROLÁVEL */}
+        <div className="p-6 overflow-y-auto flex-1">
           {isLoading && (
             <div className="flex justify-center items-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
@@ -480,16 +452,20 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
         </div>
       </div>
 
+      {/* MODAL DE CONFIRMAÇÃO DE APROVAÇÃO */}
       {showConfirmModal && chamadoToApprove && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="bg-orange-600 text-white p-4 rounded-t-lg">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
+            {/* CABEÇALHO FIXO */}
+            <div className="bg-orange-600 text-white p-4 rounded-t-lg flex-shrink-0">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5" />
                 <h3 className="text-lg font-bold">Confirmar Aprovação</h3>
               </div>
             </div>
-            <div className="p-6">
+
+            {/* CONTEÚDO ROLÁVEL */}
+            <div className="p-6 overflow-y-auto flex-1">
               <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Check className="w-8 h-8 text-green-600" />
@@ -537,10 +513,12 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
         </div>
       )}
 
+      {/* MODAL DE DETALHES DO CHAMADO */}
       {selectedChamado && !showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="bg-gray-800 text-white p-4 rounded-t-lg">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            {/* CABEÇALHO FIXO */}
+            <div className="bg-gray-800 text-white p-4 rounded-t-lg flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">
                   Detalhes do Chamado #{selectedChamado.id_chamado}
@@ -555,7 +533,9 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
                 </Button>
               </div>
             </div>
-            <div className="p-6 space-y-4">
+
+            {/* CONTEÚDO ROLÁVEL */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -625,13 +605,17 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
         </div>
       )}
 
+      {/* MODAL DE REJEIÇÃO */}
       {showRejectModal && selectedChamado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="bg-red-600 text-white p-4 rounded-t-lg">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
+            {/* CABEÇALHO FIXO */}
+            <div className="bg-red-600 text-white p-4 rounded-t-lg flex-shrink-0">
               <h3 className="text-lg font-bold">Rejeitar Chamado #{selectedChamado.id_chamado}</h3>
             </div>
-            <div className="p-6 space-y-4">
+
+            {/* CONTEÚDO ROLÁVEL */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <Label htmlFor="motivo" className="text-red-600">
                   Motivo da Rejeição <span className="text-red-500">*</span>

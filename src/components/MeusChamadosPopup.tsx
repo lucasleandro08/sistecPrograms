@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 
-
 interface Chamado {
   id_chamado: number;
   descricao_categoria_chamado: string;
@@ -19,7 +18,6 @@ interface Chamado {
   email_usuario?: string;
 }
 
-
 interface SolucaoIA {
   id_resposta_ia: number;
   fk_chamados_id_chamado: number;
@@ -31,11 +29,9 @@ interface SolucaoIA {
   data_feedback?: string;
 }
 
-
 interface MeusChamadosPopupProps {
   onClose: () => void;
 }
-
 
 export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [chamados, setChamados] = useState<Chamado[]>([]);
@@ -47,7 +43,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [enviandoFeedback, setEnviandoFeedback] = useState(false);
   const [loadingSolucao, setLoadingSolucao] = useState(false);
   const { user } = useAuth();
-
 
   // MutationObserver para forçar z-index do alertbox
   useEffect(() => {
@@ -110,7 +105,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     };
   }, []);
 
-
   // Função auxiliar para exibir alertas
   const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
     if (typeof window !== 'undefined' && (window as any).alertbox) {
@@ -150,7 +144,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       alert(message);
     }
   };
-
 
   const fetchMeusChamados = async () => {
     try {
@@ -192,7 +185,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
-
   const buscarSolucaoIA = async (idChamado: number) => {
     try {
       setLoadingSolucao(true);
@@ -222,7 +214,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       setLoadingSolucao(false);
     }
   };
-
 
   const enviarFeedbackIA = async (feedback: 'DEU_CERTO' | 'DEU_ERRADO') => {
     if (!solucaoIA) return;
@@ -275,7 +266,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
-
   useEffect(() => {
     console.log('Componente montado, usuário:', user);
     if (user?.email) {
@@ -285,7 +275,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   }, [user]);
 
-
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return 'Data não disponível';
@@ -294,7 +283,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       return 'Data inválida';
     }
   };
-
 
   const getStatusColor = (status: string) => {
     if (!status || status === null || status === undefined) {
@@ -323,7 +311,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
-
   const getStatusIcon = (status: string) => {
     if (!status || status === null || status === undefined) {
       return <AlertCircle className="w-4 h-4" />;
@@ -345,7 +332,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
-
   const getPrioridadeColor = (prioridade: number) => {
     switch (prioridade) {
       case 1:
@@ -361,17 +347,17 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
-
   const getPrioridadeTexto = (prioridade: number) => {
     const textos: Record<number, string> = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
     return textos[prioridade] || 'Não definida';
   };
 
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="bg-gray-900 text-white p-6 rounded-t-lg">
+      {/* MODAL PRINCIPAL - Estrutura ajustada */}
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+        {/* CABEÇALHO FIXO */}
+        <div className="bg-gray-900 text-white p-6 rounded-t-lg flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Meus Chamados</h2>
@@ -388,7 +374,8 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           </div>
         </div>
 
-        <div className="p-6">
+        {/* CONTEÚDO ROLÁVEL */}
+        <div className="p-6 overflow-y-auto flex-1">
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-gray-100 text-xs rounded">
               <strong>Debug:</strong> Usuário: {user?.email || 'Não logado'} | 
@@ -529,10 +516,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         </div>
       </div>
 
+      {/* MODAL DE DETALHES - Estrutura ajustada */}
       {selectedChamado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="bg-gray-800 text-white p-4 rounded-t-lg">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            {/* CABEÇALHO FIXO */}
+            <div className="bg-gray-800 text-white p-4 rounded-t-lg flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">
                   Detalhes do Chamado #{selectedChamado.id_chamado}
@@ -547,7 +536,9 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                 </Button>
               </div>
             </div>
-            <div className="p-6 space-y-4">
+
+            {/* CONTEÚDO ROLÁVEL */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -621,10 +612,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         </div>
       )}
 
+      {/* MODAL DE SOLUÇÃO IA - Estrutura ajustada */}
       {showSolucaoIA && solucaoIA && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col">
+            {/* CABEÇALHO FIXO */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-bold">🤖 Solução Sugerida pela IA</h3>
@@ -644,7 +637,8 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </div>
             </div>
             
-            <div className="p-6 space-y-6">
+            {/* CONTEÚDO ROLÁVEL */}
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-2">📋 Sobre este chamado:</h4>
                 <p className="text-sm text-gray-600">

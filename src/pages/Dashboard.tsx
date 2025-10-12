@@ -332,7 +332,23 @@ const Dashboard = () => {
                 <Button
                   onClick={() => setShowDownloadMenu(!showDownloadMenu)}
                   disabled={downloadando}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+                  style={{
+                    background: downloadando 
+                      ? '#ff9966' 
+                      : 'linear-gradient(to right, #ff9966, #ff8855)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!downloadando) {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #ff8855, #ff7744)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!downloadando) {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #ff9966, #ff8855)';
+                    }
+                  }}
+                  className="text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
                 >
                   {downloadando ? (
                     <>

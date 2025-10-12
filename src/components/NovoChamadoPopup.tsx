@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-
 const formSchema = z.object({
   titulo: z.string().min(1, 'Título é obrigatório'),
   categoria: z.string().min(1, 'Categoria é obrigatória'),
@@ -19,9 +18,7 @@ const formSchema = z.object({
   anexo: z.any().optional(),
 });
 
-
 type FormData = z.infer<typeof formSchema>;
-
 
 interface Categoria {
   value: string;
@@ -29,19 +26,16 @@ interface Categoria {
   problemas: { value: string; label: string; }[];
 }
 
-
 interface NovoChamadoPopupProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
-
 
 export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('');
   const { user } = useAuth();
-
 
   const {
     register,
@@ -53,7 +47,6 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
-
 
   // MutationObserver para forçar z-index do alertbox
   useEffect(() => {
@@ -117,7 +110,6 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
     };
   }, []);
 
-
   // Função auxiliar para exibir alertas
   const showAlert = (type: 'success' | 'error' | 'warning', message: string) => {
     if (typeof window !== 'undefined' && (window as any).alertbox) {
@@ -156,7 +148,6 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
       alert(message);
     }
   };
-
 
   // Categorias e problemas baseados na estrutura do sistema
   const categorias: Categoria[] = [
@@ -250,10 +241,8 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
     }
   ];
 
-
   // Watch categoria para atualizar problemas
   const categoriaWatched = watch('categoria');
-
 
   // Resetar problema quando categoria mudar
   useEffect(() => {
@@ -262,7 +251,6 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
       setSelectedCategoria(categoriaWatched);
     }
   }, [categoriaWatched, selectedCategoria, setValue]);
-
 
   // Função para criar chamado
   const criarChamado = async (data: FormData) => {
@@ -330,20 +318,19 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
     }
   };
 
-
   const onSubmit = async (data: FormData) => {
     await criarChamado(data);
   };
 
-
   // Obter problemas da categoria selecionada
   const problemasDisponiveis = categorias.find(cat => cat.value === categoriaWatched)?.problemas || [];
 
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="bg-gray-900 text-white p-6 rounded-t-lg">
+      {/* Container principal com flexbox */}
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* CABEÇALHO FIXO */}
+        <div className="bg-gray-900 text-white p-6 rounded-t-lg flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Abrir Novo Chamado</h2>
@@ -360,7 +347,8 @@ export const NovoChamadoPopup = ({ onClose, onSuccess }: NovoChamadoPopupProps) 
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+        {/* FORMULÁRIO ROLÁVEL */}
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Exibir erro se houver */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
