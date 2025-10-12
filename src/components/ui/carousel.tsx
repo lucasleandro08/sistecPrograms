@@ -7,11 +7,13 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
+// Tipos para API e parâmetros do hook useEmblaCarousel
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
 type CarouselOptions = UseCarouselParameters[0]
 type CarouselPlugin = UseCarouselParameters[1]
 
+// Props do componente Carousel com opções, plugins, orientação e callback para API
 type CarouselProps = {
   opts?: CarouselOptions
   plugins?: CarouselPlugin
@@ -19,6 +21,7 @@ type CarouselProps = {
   setApi?: (api: CarouselApi) => void
 }
 
+// Contexto para compartilhar estado e funções do carousel internamente
 type CarouselContextProps = {
   carouselRef: ReturnType<typeof useEmblaCarousel>[0]
   api: ReturnType<typeof useEmblaCarousel>[1]
@@ -30,6 +33,7 @@ type CarouselContextProps = {
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null)
 
+// Hook para acessar o contexto do Carousel, garante estar dentro do provider
 function useCarousel() {
   const context = React.useContext(CarouselContext)
 
@@ -40,6 +44,7 @@ function useCarousel() {
   return context
 }
 
+// Componente principal Carousel que gerencia estado e API do EmblaCarousel
 const Carousel = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & CarouselProps
@@ -66,23 +71,24 @@ const Carousel = React.forwardRef<
     const [canScrollPrev, setCanScrollPrev] = React.useState(false)
     const [canScrollNext, setCanScrollNext] = React.useState(false)
 
+    // Atualiza disponibilidade dos controles de navegação
     const onSelect = React.useCallback((api: CarouselApi) => {
-      if (!api) {
-        return
-      }
-
+      if (!api) return
       setCanScrollPrev(api.canScrollPrev())
       setCanScrollNext(api.canScrollNext())
     }, [])
 
+    // Função para mover para slide anterior
     const scrollPrev = React.useCallback(() => {
       api?.scrollPrev()
     }, [api])
 
+    // Função para mover para slide próximo
     const scrollNext = React.useCallback(() => {
       api?.scrollNext()
     }, [api])
 
+    // Tratamento de teclado para seta esquerda e direita
     const handleKeyDown = React.useCallback(
       (event: React.KeyboardEvent<HTMLDivElement>) => {
         if (event.key === "ArrowLeft") {
@@ -96,23 +102,18 @@ const Carousel = React.forwardRef<
       [scrollPrev, scrollNext]
     )
 
+    // Passa a API externa via callback se setApi fornecido
     React.useEffect(() => {
-      if (!api || !setApi) {
-        return
-      }
-
+      if (!api || !setApi) return
       setApi(api)
     }, [api, setApi])
 
+    // Liga e desliga listeners para atualizar estado de navegação
     React.useEffect(() => {
-      if (!api) {
-        return
-      }
-
+      if (!api) return
       onSelect(api)
       api.on("reInit", onSelect)
       api.on("select", onSelect)
-
       return () => {
         api?.off("select", onSelect)
       }
@@ -148,6 +149,7 @@ const Carousel = React.forwardRef<
 )
 Carousel.displayName = "Carousel"
 
+// Conteúdo do carousel. Aplica direção flex conforme orientação
 const CarouselContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -170,6 +172,7 @@ const CarouselContent = React.forwardRef<
 })
 CarouselContent.displayName = "CarouselContent"
 
+// Item individual do carousel, largura ou altura 100% conforme orientação
 const CarouselItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -192,6 +195,7 @@ const CarouselItem = React.forwardRef<
 })
 CarouselItem.displayName = "CarouselItem"
 
+// Botão para navegar para slide anterior, desabilitado conforme estado
 const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
@@ -221,6 +225,7 @@ const CarouselPrevious = React.forwardRef<
 })
 CarouselPrevious.displayName = "CarouselPrevious"
 
+// Botão para navegar para slide próximo, desabilitado conforme estado
 const CarouselNext = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>

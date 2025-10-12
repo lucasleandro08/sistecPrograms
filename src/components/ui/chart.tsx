@@ -3,9 +3,10 @@ import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
 
-// Format: { THEME_NAME: CSS_SELECTOR }
+// Define temas para estilização condicional (ex: light e dark)
 const THEMES = { light: "", dark: ".dark" } as const
 
+// Configuração do gráfico que pode incluir rótulos, ícones e cores por tema ou cor fixa
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode
@@ -16,22 +17,23 @@ export type ChartConfig = {
   )
 }
 
+// Contexto para disponibilizar configuração global do gráfico para componentes filhos
 type ChartContextProps = {
   config: ChartConfig
 }
 
 const ChartContext = React.createContext<ChartContextProps | null>(null)
 
+// Hook para consumo do contexto do gráfico, lança erro se usado fora do provider
 function useChart() {
   const context = React.useContext(ChartContext)
-
   if (!context) {
     throw new Error("useChart must be used within a <ChartContainer />")
   }
-
   return context
 }
 
+// Container do gráfico responsivo, aplica styles globais e disponibiliza contexto
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
@@ -50,21 +52,33 @@ const ChartContainer = React.forwardRef<
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
+          // Classes globais para personalizar elementos internos do Recharts
+          "flex aspect-video justify-center text-xs " +
+            "[&_ .recharts-cartesian-axis-tick_text]:fill-muted-foreground " +
+            "[&_ .recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 " +
+            "[&_ .recharts-curve.recharts-tooltip-cursor]:stroke-border " +
+            "[&_ .recharts-dot[stroke='#fff']]:stroke-transparent " +
+            "[&_ .recharts-layer]:outline-none " +
+            "[&_ .recharts-polar-grid_[stroke='#ccc']]:stroke-border " +
+            "[&_ .recharts-radial-bar-background-sector]:fill-muted " +
+            "[&_ .recharts-rectangle.recharts-tooltip-cursor]:fill-muted " +
+            "[&_ .recharts-reference-line_[stroke='#ccc']]:stroke-border " +
+            "[&_ .recharts-sector[stroke='#fff']]:stroke-transparent " +
+            "[&_ .recharts-sector]:outline-none " +
+            "[&_ .recharts-surface]:outline-none",
           className
         )}
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        <RechartsPrimitive.ResponsiveContainer>{children}</RechartsPrimitive.ResponsiveContainer>
       </div>
     </ChartContext.Provider>
   )
 })
 ChartContainer.displayName = "Chart"
 
+// Aplica estilos CSS dinâmicos para cores e temas no gráfico via CSS Custom Properties
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([_, config]) => config.theme || config.color
@@ -98,8 +112,10 @@ ${colorConfig
   )
 }
 
+// Reexporta Tooltip do Recharts para uso externo
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+// Conteúdo customizado do tooltip, consumindo configuração do gráfico para labels e ícones
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
@@ -254,8 +270,10 @@ const ChartTooltipContent = React.forwardRef<
 )
 ChartTooltipContent.displayName = "ChartTooltip"
 
+// Reexporta legenda padrão do Recharts
 const ChartLegend = RechartsPrimitive.Legend
 
+// Conteúdo customizado da legenda, renderiza ícones e textos configurados
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
@@ -314,7 +332,7 @@ const ChartLegendContent = React.forwardRef<
 )
 ChartLegendContent.displayName = "ChartLegend"
 
-// Helper to extract item config from a payload.
+// Função auxiliar para extrair configuração do item a partir do payload do gráfico
 function getPayloadConfigFromPayload(
   config: ChartConfig,
   payload: unknown,

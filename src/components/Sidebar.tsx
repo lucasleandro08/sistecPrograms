@@ -30,7 +30,6 @@ export const Sidebar = () => {
     }
   ];
 
-  // Item especial para Gerenciar Usuários com submenu
   const userMenuItem = {
     title: 'Gerenciar Usuários',
     path: '/usuarios',
@@ -47,22 +46,22 @@ export const Sidebar = () => {
   const isUserSectionActive = location.pathname === '/usuarios' || location.pathname === '/usuarios-deletados';
 
   return (
-    <div className="hidden md:flex w-64 bg-gray-900 text-white flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-700">
-        <div className="flex items-center justify-center">
-          <img 
-            src="/lovable-uploads/d3655855-204d-4a0f-a98d-2d80537273b9.png" 
-            alt="Sistec"
-            className="h-12 w-auto max-w-full object-contain"
-          />
-        </div>
+    <div className="hidden md:flex w-64 bg-gray-900 text-white flex flex-col min-h-screen">
+      {/* Logo fixa no topo */}
+      <div
+        className="border-b border-gray-700 flex items-center justify-center sticky top-0 bg-gray-900 z-40"
+        style={{ height: '80px' }}
+      >
+        <img
+          src="/lovable-uploads/d3655855-204d-4a0f-a98d-2d80537273b9.png"
+          alt="Sistec"
+          className="max-h-[36px] w-auto object-contain"
+        />
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
+      {/* Navigation - preenche o espaço restante e rola se necessário */}
+      <nav className="flex-grow p-4 overflow-y-auto">
         <ul className="space-y-2">
-          {/* Menu items regulares */}
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -82,9 +81,7 @@ export const Sidebar = () => {
             );
           })}
 
-          {/* Menu item especial com submenu para Usuários */}
           <li>
-            {/* Item principal - Gerenciar Usuários */}
             <div
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                 isUserSectionActive
@@ -102,10 +99,8 @@ export const Sidebar = () => {
               )}
             </div>
 
-            {/* Submenu */}
             {isUserMenuOpen && (
               <ul className="mt-2 ml-8 space-y-1">
-                {/* Link para Gerenciar Usuários */}
                 <li>
                   <Link
                     to={userMenuItem.path}
@@ -120,7 +115,6 @@ export const Sidebar = () => {
                   </Link>
                 </li>
 
-                {/* Subitems */}
                 {userMenuItem.subItems.map((subItem) => {
                   const isSubActive = location.pathname === subItem.path;
                   return (

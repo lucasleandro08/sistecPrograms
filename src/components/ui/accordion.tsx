@@ -4,8 +4,10 @@ import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// Componente Root do Accordion (container principal)
 const Accordion = AccordionPrimitive.Root
 
+// Componente Item do Accordion com forwarding ref e classe de borda inferior
 const AccordionItem = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
@@ -18,6 +20,7 @@ const AccordionItem = React.forwardRef<
 ))
 AccordionItem.displayName = "AccordionItem"
 
+// Botão que dispara a abertura/fechamento do item do Accordion
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
@@ -32,12 +35,14 @@ const AccordionTrigger = React.forwardRef<
       {...props}
     >
       {children}
+      {/* Ícone indicador que gira ao abrir o item */}
       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ))
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
 
+// Conteúdo exibido ao abrir o item do Accordion com animação suave de abrir/fechar
 const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
@@ -50,7 +55,7 @@ const AccordionContent = React.forwardRef<
     <div className={cn("pb-4 pt-0", className)}>{children}</div>
   </AccordionPrimitive.Content>
 ))
-
 AccordionContent.displayName = AccordionPrimitive.Content.displayName
 
+// Exporta os components principais para uso externo
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }

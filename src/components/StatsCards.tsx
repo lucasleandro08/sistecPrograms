@@ -11,16 +11,15 @@ export const StatsCards = () => {
   const [showAprovarChamadosPopup, setShowAprovarChamadosPopup] = useState(false);
   const { user } = useAuth();
 
-  // Verificar se usuário pode aprovar chamados (Gestor de Chamados, Gerente ou Admin)
   const canApproveTickets = user?.perfil?.nivel_acesso >= 4;
 
   const stats = [
     {
       title: 'Abrir Novo Chamado',
       icon: Plus,
-      bgColor: 'bg-white',
-      iconColor: 'text-orange-500',
-      iconBg: 'bg-orange-100',
+      bgColor: 'bg-orange-100', // fundo laranja claro (mesma cor do ícone original)
+      iconColor: 'text-orange-500', // cor do ícone laranja
+      iconBg: 'bg-white', // fundo branco para o ícone
       onClick: () => setShowNovoChamadoPopup(true),
       show: true
     },
@@ -40,11 +39,10 @@ export const StatsCards = () => {
       iconColor: 'text-orange-500',
       iconBg: 'bg-orange-100',
       onClick: () => setShowAprovarChamadosPopup(true),
-      show: canApproveTickets // Só mostra para gestores e superiores
+      show: canApproveTickets
     }
   ];
 
-  // Filtrar cards baseado nas permissões
   const visibleStats = stats.filter(stat => stat.show);
 
   return (
@@ -72,8 +70,8 @@ export const StatsCards = () => {
 
       {/* Popups */}
       {showNovoChamadoPopup && (
-        <NovoChamadoPopup 
-          onClose={() => setShowNovoChamadoPopup(false)} 
+        <NovoChamadoPopup
+          onClose={() => setShowNovoChamadoPopup(false)}
           onSuccess={() => {
             setShowNovoChamadoPopup(false);
           }}
