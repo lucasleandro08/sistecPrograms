@@ -13,8 +13,10 @@ import {
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
+// Simplifica importação do FormProvider do react-hook-form
 const Form = FormProvider
 
+// Contexto para armazenar o nome do campo no formulário
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
@@ -26,6 +28,7 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 )
 
+// Componente que conecta um campo com react-hook-form via Controller e provê contexto do nome
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
@@ -39,6 +42,7 @@ const FormField = <
   )
 }
 
+// Hook para acessar estado e metadados do campo, incluindo erro e ids para acessibilidade
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
@@ -62,6 +66,7 @@ const useFormField = () => {
   }
 }
 
+// Contexto para armazenar id único do item do formulário para acessibilidade
 type FormItemContextValue = {
   id: string
 }
@@ -70,6 +75,7 @@ const FormItemContext = React.createContext<FormItemContextValue>(
   {} as FormItemContextValue
 )
 
+// Container do item do formulário que provê um id único via contexto e estilos padrão
 const FormItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -84,6 +90,7 @@ const FormItem = React.forwardRef<
 })
 FormItem.displayName = "FormItem"
 
+// Label do campo com destaque de erro automático e ligação pelo htmlFor
 const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
@@ -101,6 +108,7 @@ const FormLabel = React.forwardRef<
 })
 FormLabel.displayName = "FormLabel"
 
+// Controle do input/custom com ids e aria para linkar descrição, mensagem e indicar erro
 const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
   React.ComponentPropsWithoutRef<typeof Slot>
@@ -112,9 +120,7 @@ const FormControl = React.forwardRef<
       ref={ref}
       id={formItemId}
       aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
+        !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
       {...props}
@@ -123,6 +129,7 @@ const FormControl = React.forwardRef<
 })
 FormControl.displayName = "FormControl"
 
+// Descrição do campo, associada via id para acessibilidade, com estilo discreto
 const FormDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
@@ -140,6 +147,7 @@ const FormDescription = React.forwardRef<
 })
 FormDescription.displayName = "FormDescription"
 
+// Mensagem de erro ou texto adicional, mostrada com estilo de destaque para erro
 const FormMessage = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>

@@ -3,6 +3,7 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
 
+// Componente Drawer com opção para escalar fundo ao abrir, repassa props ao primitive
 const Drawer = ({
   shouldScaleBackground = true,
   ...props
@@ -14,12 +15,16 @@ const Drawer = ({
 )
 Drawer.displayName = "Drawer"
 
+// Trigger para abrir o Drawer
 const DrawerTrigger = DrawerPrimitive.Trigger
 
+// Portal para renderizar o Drawer fora da hierarquia DOM normal
 const DrawerPortal = DrawerPrimitive.Portal
 
+// Botão para fechar o Drawer
 const DrawerClose = DrawerPrimitive.Close
 
+// Overlay escurecido atrás do Drawer
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
@@ -32,6 +37,7 @@ const DrawerOverlay = React.forwardRef<
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
+// Conteúdo principal do Drawer, fixado na parte inferior com borda arredondada e indicador visual para arrastar
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
@@ -46,6 +52,7 @@ const DrawerContent = React.forwardRef<
       )}
       {...props}
     >
+      {/* Indicador visual para sinalizar arrastável */}
       <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
       {children}
     </DrawerPrimitive.Content>
@@ -53,6 +60,7 @@ const DrawerContent = React.forwardRef<
 ))
 DrawerContent.displayName = "DrawerContent"
 
+// Cabeçalho do Drawer com padding e alinhamento adaptável
 const DrawerHeader = ({
   className,
   ...props
@@ -64,6 +72,7 @@ const DrawerHeader = ({
 )
 DrawerHeader.displayName = "DrawerHeader"
 
+// Rodapé do Drawer com margin top automática para empurrar para baixo e espaçamento
 const DrawerFooter = ({
   className,
   ...props
@@ -75,6 +84,7 @@ const DrawerFooter = ({
 )
 DrawerFooter.displayName = "DrawerFooter"
 
+// Título do Drawer com fonte maior e negrito
 const DrawerTitle = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
@@ -90,6 +100,7 @@ const DrawerTitle = React.forwardRef<
 ))
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName
 
+// Descrição do Drawer, texto secundário menor e discreto
 const DrawerDescription = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>

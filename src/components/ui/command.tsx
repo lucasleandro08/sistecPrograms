@@ -6,6 +6,7 @@ import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
+// Componente raiz do Command, estilizado com fundo e bordas para dropdown ou modal
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive>
@@ -21,6 +22,7 @@ const Command = React.forwardRef<
 ))
 Command.displayName = CommandPrimitive.displayName
 
+// Dialog que envolve o Command para modais de busca/ação
 interface CommandDialogProps extends DialogProps {}
 
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
@@ -35,6 +37,7 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   )
 }
 
+// Input do Command com ícone de busca e estilos para foco e placeholder
 const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
@@ -51,9 +54,9 @@ const CommandInput = React.forwardRef<
     />
   </div>
 ))
-
 CommandInput.displayName = CommandPrimitive.Input.displayName
 
+// Lista de itens do Command, com rolagem se necessário e altura máxima
 const CommandList = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
@@ -64,22 +67,18 @@ const CommandList = React.forwardRef<
     {...props}
   />
 ))
-
 CommandList.displayName = CommandPrimitive.List.displayName
 
+// Conteúdo exibido quando não há resultados na busca
 const CommandEmpty = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Empty>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
 >((props, ref) => (
-  <CommandPrimitive.Empty
-    ref={ref}
-    className="py-6 text-center text-sm"
-    {...props}
-  />
+  <CommandPrimitive.Empty ref={ref} className="py-6 text-center text-sm" {...props} />
 ))
-
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName
 
+// Grupo de itens no Command com estilos para título e espaçamento
 const CommandGroup = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Group>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
@@ -93,9 +92,9 @@ const CommandGroup = React.forwardRef<
     {...props}
   />
 ))
-
 CommandGroup.displayName = CommandPrimitive.Group.displayName
 
+// Separador visual entre grupos ou seções do Command
 const CommandSeparator = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
@@ -108,6 +107,7 @@ const CommandSeparator = React.forwardRef<
 ))
 CommandSeparator.displayName = CommandPrimitive.Separator.displayName
 
+// Item individual da lista Command, estilizado para estados selecionado, desabilitado etc.
 const CommandItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
@@ -115,15 +115,16 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50",
+      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none " +
+      "data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50",
       className
     )}
     {...props}
   />
 ))
-
 CommandItem.displayName = CommandPrimitive.Item.displayName
 
+// Exibe atalho de teclado ao lado direito do item Command
 const CommandShortcut = ({
   className,
   ...props

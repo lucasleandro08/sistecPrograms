@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+// Variantes de estilo para o componente Alert, usando cva para composição de classes
 const alertVariants = cva(
   "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
   {
@@ -19,19 +20,21 @@ const alertVariants = cva(
   }
 )
 
+// Componente Alert principal; aceita variantes para diferentes estilos
 const Alert = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
 >(({ className, variant, ...props }, ref) => (
   <div
     ref={ref}
-    role="alert"
+    role="alert" // Importante para acessibilidade: identifica que é uma mensagem de alerta
     className={cn(alertVariants({ variant }), className)}
     {...props}
   />
 ))
 Alert.displayName = "Alert"
 
+// Título do alerta, estilizado com fonte média e espaçamento apropriado
 const AlertTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
@@ -44,6 +47,7 @@ const AlertTitle = React.forwardRef<
 ))
 AlertTitle.displayName = "AlertTitle"
 
+// Descrição adicional do alerta com texto menor e espaçamento relaxado
 const AlertDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
