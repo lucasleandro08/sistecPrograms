@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User, Settings, LogOut, Shield, X, AlertTriangle } from 'lucide-react';
 
 interface ProfilePanelProps {
@@ -8,45 +8,16 @@ interface ProfilePanelProps {
 
 export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [processando, setProcessando] = useState(false);
-
-  // MutationObserver para forçar z-index do modal de confirmação
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.id = 'logout-modal-force-zindex';
-    style.innerHTML = `
-      .logout-modal-overlay {
-        z-index: 9999 !important;
-      }
-    `;
-    
-    const oldStyle = document.getElementById('logout-modal-force-zindex');
-    if (!oldStyle) {
-      document.head.appendChild(style);
-    }
-
-    return () => {
-      const styleElement = document.getElementById('logout-modal-force-zindex');
-      if (styleElement) {
-        styleElement.remove();
-      }
-    };
-  }, []);
 
   const handleLogout = () => {
-    setProcessando(true);
-    
-    // Simula processamento antes de redirecionar
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 500);
+    window.location.href = '/login';
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Overlay do Panel */}
+      {/* Overlay */}
       <div
         className="fixed inset-0 bg-black bg-opacity-20 z-40"
         onClick={onClose}
@@ -98,58 +69,38 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({ isOpen, onClose }) =
 
       {/* Modal de confirmação de saída */}
       {showLogoutConfirm && (
-        <div className="logout-modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            {/* Header do Modal */}
-            <div className="bg-orange-600 text-white p-4 rounded-t-lg">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
+            <div className="bg-orange-600 text-white flex items-center justify-between p-4 rounded-t-lg">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5" />
-                <h3 className="text-lg font-bold">Confirmar Saída</h3>
+                <span className="font-bold">Confirmar saída</span>
               </div>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="text-white hover:text-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-
-            {/* Corpo do Modal */}
-            <div className="p-6">
-              <div className="text-center mb-6">
-                {/* Ícone Central */}
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <LogOut className="w-8 h-8 text-orange-600" />
-                </div>
-
-                {/* Mensagem */}
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                  Tem certeza que deseja sair do sistema?
-                </h4>
-                <p className="text-sm text-gray-600">
-                  Você precisará fazer login novamente para acessar o sistema.
-                </p>
-              </div>
-
-              {/* Botões */}
-              <div className="flex gap-3">
+            <div className="p-6 text-center">
+              <p className="text-gray-800 text-lg font-semibold mb-2">
+                Tem certeza que deseja sair do sistema?
+              </p>
+              <p className="text-gray-500 text-sm mb-6">Você precisará fazer login novamente para acessar.</p>
+              <div className="flex gap-4">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
-                  disabled={processando}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleLogout}
-                  disabled={processando}
-                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center gap-1"
                 >
-                  {processando ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Saindo...
-                    </>
-                  ) : (
-                    <>
-                      <LogOut className="w-4 h-4" />
-                      Sim, Sair
-                    </>
-                  )}
+                  <LogOut className="w-4 h-4" />
+                  Sair
                 </button>
               </div>
             </div>

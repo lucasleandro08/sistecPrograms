@@ -4,12 +4,14 @@ import { MobileMenu } from './MobileMenu';
 import { ProfilePanel } from './ProfilePanel';
 import { useAuth } from '@/contexts/AuthContext';
 
+
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [processando, setProcessando] = useState(false);
   const { user, logout } = useAuth();
+
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -20,10 +22,12 @@ export const Header = () => {
       }
     `;
 
+
     const oldStyle = document.getElementById('logout-modal-force-zindex-header');
     if (!oldStyle) {
       document.head.appendChild(style);
     }
+
 
     return () => {
       const styleElement = document.getElementById('logout-modal-force-zindex-header');
@@ -33,12 +37,15 @@ export const Header = () => {
     };
   }, []);
 
+
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
   };
 
+
   const handleLogoutConfirm = () => {
     setProcessando(true);
+
 
     setTimeout(() => {
       logout();
@@ -48,10 +55,11 @@ export const Header = () => {
     }, 500);
   };
 
+
   return (
     <>
-      <header className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 md:left-64">
-        <div className="flex items-center justify-between px-4 md:px-6 py-4 max-w-full">
+      <header className="bg-white border-b border-gray-200 fixed top-0 left-0 md:left-64 z-50 w-full md:w-[calc(100%-16rem)]">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4">
           <div className="flex items-center gap-3 md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -67,7 +75,9 @@ export const Header = () => {
             />
           </div>
 
+
           <div className="hidden md:block"></div>
+
 
           <div className="flex items-center gap-2 md:gap-4 ml-auto">
             <div className="relative">
@@ -76,6 +86,7 @@ export const Header = () => {
                 <span className="text-xs text-white font-bold">3</span>
               </div>
             </div>
+
 
             <div className="relative">
               <button
@@ -94,6 +105,7 @@ export const Header = () => {
                 </div>
               </button>
 
+
               {isProfilePanelOpen && (
                 <>
                   <div
@@ -102,19 +114,21 @@ export const Header = () => {
                     aria-hidden="true"
                   />
 
-                  <div className="absolute top-16 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="profile-panel">
+
+                  <div className="absolute top-16 right-0 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-xl border border-gray-200 z-50 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="profile-panel">
                     <div className="p-6 border-b border-gray-200">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
                           <User className="w-6 h-6 text-gray-600" />
                         </div>
-                        <div>
-                          <h3 id="profile-panel" className="font-semibold text-gray-900">{user?.name}</h3>
-                          <p className="text-sm text-gray-500">{user?.email}</p>
+                        <div className="min-w-0">
+                          <h3 id="profile-panel" className="font-semibold text-gray-900 truncate">{user?.name}</h3>
+                          <p className="text-sm text-gray-500 truncate">{user?.email}</p>
                           <p className="text-xs text-orange-600 font-medium">{user?.role}</p>
                         </div>
                       </div>
                     </div>
+
 
                     <div className="p-2">
                       <button
@@ -132,14 +146,12 @@ export const Header = () => {
           </div>
         </div>
 
+
         <MobileMenu
           isOpen={isMobileMenuOpen}
           onClose={() => setIsMobileMenuOpen(false)}
         />
       </header>
-
-      {/* Espaço reservado para header fixo considerando sidebar */}
-      <div className="h-[64px] md:ml-64" aria-hidden="true"></div>
 
       {showLogoutConfirm && (
         <div className="logout-modal-overlay-header fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
@@ -151,11 +163,13 @@ export const Header = () => {
               </div>
             </div>
 
+
             <div className="p-6">
               <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <LogOut className="w-8 h-8 text-orange-600" />
                 </div>
+
 
                 <h4 className="text-lg font-semibold text-gray-900 mb-2">
                   Tem certeza que deseja sair do sistema?
@@ -164,6 +178,7 @@ export const Header = () => {
                   Você precisará fazer login novamente para acessar o sistema.
                 </p>
               </div>
+
 
               <div className="flex gap-3">
                 <button

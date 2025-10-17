@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 
+
 interface Chamado {
   id_chamado: number;
   descricao_categoria_chamado: string;
@@ -18,6 +19,7 @@ interface Chamado {
   email_usuario?: string;
 }
 
+
 interface SolucaoIA {
   id_resposta_ia: number;
   fk_chamados_id_chamado: number;
@@ -29,9 +31,11 @@ interface SolucaoIA {
   data_feedback?: string;
 }
 
+
 interface MeusChamadosPopupProps {
   onClose: () => void;
 }
+
 
 export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [chamados, setChamados] = useState<Chamado[]>([]);
@@ -43,6 +47,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [enviandoFeedback, setEnviandoFeedback] = useState(false);
   const [loadingSolucao, setLoadingSolucao] = useState(false);
   const { user } = useAuth();
+
 
   // MutationObserver para forçar z-index do alertbox
   useEffect(() => {
@@ -62,6 +67,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       document.head.appendChild(style);
     }
 
+
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -72,6 +78,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               node.querySelector('[id*="alertBox"]'),
               node.classList?.contains('alertBoxBody') ? node : null,
             ].filter(Boolean);
+
 
             alertElements.forEach((el) => {
               if (el instanceof HTMLElement) {
@@ -95,24 +102,27 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       });
     });
 
+
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
+
 
     return () => {
       observer.disconnect();
     };
   }, []);
 
+
   // Função auxiliar para exibir alertas
   const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
     if (typeof window !== 'undefined' && (window as any).alertbox) {
       const config = {
-        success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
-        error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
-        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' },
-        info: { alertIcon: 'info' as const, title: 'Informação', themeColor: '#3b82f6', btnColor: '#60a5fa' }
+        success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#16a34a' },
+        error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#dc2626' },
+        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#ea580c' },
+        info: { alertIcon: 'info' as const, title: 'Informação', themeColor: '#3b82f6', btnColor: '#3b82f6' }
       };
       
       (window as any).alertbox.render({
@@ -123,6 +133,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       });
 
       setTimeout(() => {
+        // Encontra todos os elementos do AlertBox
         const alertBox = document.querySelector('.alertBoxBody') || 
                         document.querySelector('[class*="alertBox"]') ||
                         document.querySelector('[id*="alertBox"]');
@@ -130,6 +141,75 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         if (alertBox instanceof HTMLElement) {
           alertBox.style.zIndex = '2147483647';
           alertBox.style.position = 'fixed';
+          
+          // Encontra o container branco principal (geralmente é um div interno)
+          const mainContainer = alertBox.querySelector('[class*="container"]') ||
+                               alertBox.querySelector('[class*="content"]') ||
+                               alertBox.querySelector('[class*="box"]') ||
+                               alertBox.children[0];
+          
+          if (mainContainer instanceof HTMLElement) {
+            // Garante que o container branco tem padding adequado embaixo
+            mainContainer.style.paddingBottom = '80px';
+            mainContainer.style.position = 'relative';
+            mainContainer.style.minHeight = '280px';
+            mainContainer.style.minWidth = '450px';
+            mainContainer.style.maxWidth = '550px';
+            mainContainer.style.padding = '32px 40px 80px 40px';
+            mainContainer.style.borderRadius = '12px';
+          }
+          
+          // Encontra o container do botão
+          const buttonContainer = alertBox.querySelector('[class*="footer"]') ||
+                                 alertBox.querySelector('[class*="action"]') ||
+                                 alertBox.querySelector('button')?.parentElement;
+          
+          if (buttonContainer instanceof HTMLElement) {
+            // Posiciona o container do botão DENTRO da caixa branca
+            buttonContainer.style.position = 'absolute';
+            buttonContainer.style.bottom = '28px';
+            buttonContainer.style.left = '50%';
+            buttonContainer.style.transform = 'translateX(-50%)';
+            buttonContainer.style.display = 'flex';
+            buttonContainer.style.justifyContent = 'center';
+            buttonContainer.style.alignItems = 'center';
+            buttonContainer.style.width = 'auto';
+            buttonContainer.style.zIndex = '10';
+          }
+          
+          // Estiliza o botão Ok
+          const button = alertBox.querySelector('button') || 
+                        alertBox.querySelector('[class*="btn"]');
+          
+          if (button instanceof HTMLElement) {
+            // Aplica estilos customizados ao botão
+            button.style.position = 'relative';
+            button.style.backgroundColor = config[type].btnColor;
+            button.style.color = '#ffffff';
+            button.style.border = 'none';
+            button.style.borderRadius = '8px';
+            button.style.padding = '12px 40px';
+            button.style.fontSize = '15px';
+            button.style.fontWeight = '600';
+            button.style.cursor = 'pointer';
+            button.style.minWidth = '140px';
+            button.style.transition = 'all 0.2s ease';
+            button.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            button.style.margin = '0';
+            
+            // Hover effect
+            button.addEventListener('mouseenter', () => {
+              button.style.opacity = '0.9';
+              button.style.transform = 'translateY(-1px)';
+              button.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)';
+            });
+            
+            button.addEventListener('mouseleave', () => {
+              button.style.opacity = '1';
+              button.style.transform = 'translateY(0)';
+              button.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            });
+          }
           
           const allElements = alertBox.querySelectorAll('*');
           allElements.forEach((el) => {
@@ -145,6 +225,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const fetchMeusChamados = async () => {
     try {
       setIsLoading(true);
@@ -152,9 +233,11 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       
       console.log('Buscando chamados do usuário:', user?.email);
 
+
       if (!user?.email) {
         throw new Error('Usuário não autenticado');
       }
+
 
       const response = await fetch('http://localhost:3001/api/chamados', {
         method: 'GET',
@@ -164,12 +247,15 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         },
       });
 
+
       console.log('Resposta da API chamados:', response.status);
+
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
         throw new Error(errorData.message || `Erro HTTP: ${response.status}`);
       }
+
 
       const data = await response.json();
       console.log('Dados recebidos:', data);
@@ -185,10 +271,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const buscarSolucaoIA = async (idChamado: number) => {
     try {
       setLoadingSolucao(true);
       console.log('Buscando solução IA para chamado:', idChamado);
+
 
       const response = await fetch(`http://localhost:3001/api/chamados/${idChamado}/solucao-ia`, {
         method: 'GET',
@@ -197,6 +285,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           'x-user-email': user?.email || '',
         },
       });
+
 
       if (response.ok) {
         const data = await response.json();
@@ -215,12 +304,15 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const enviarFeedbackIA = async (feedback: 'DEU_CERTO' | 'DEU_ERRADO') => {
     if (!solucaoIA) return;
+
 
     try {
       setEnviandoFeedback(true);
       console.log('Enviando feedback:', feedback, 'para chamado:', solucaoIA.fk_chamados_id_chamado);
+
 
       const response = await fetch(`http://localhost:3001/api/chamados/${solucaoIA.fk_chamados_id_chamado}/feedback-ia`, {
         method: 'POST',
@@ -231,10 +323,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         body: JSON.stringify({ feedback }),
       });
 
+
       // Fecha o modal de solução antes de mostrar alerta
       setShowSolucaoIA(false);
       setSolucaoIA(null);
       setEnviandoFeedback(false);
+
 
       setTimeout(() => {
         if (response.ok) {
@@ -253,6 +347,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         }
       }, 100);
 
+
     } catch (error) {
       console.error('Erro ao enviar feedback:', error);
       
@@ -260,11 +355,13 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       setSolucaoIA(null);
       setEnviandoFeedback(false);
 
+
       setTimeout(() => {
         showAlert('error', 'Erro de conexão ao enviar feedback');
       }, 100);
     }
   };
+
 
   useEffect(() => {
     console.log('Componente montado, usuário:', user);
@@ -275,6 +372,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   }, [user]);
 
+
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return 'Data não disponível';
@@ -283,6 +381,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       return 'Data inválida';
     }
   };
+
 
   const getStatusColor = (status: string) => {
     if (!status || status === null || status === undefined) {
@@ -311,6 +410,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const getStatusIcon = (status: string) => {
     if (!status || status === null || status === undefined) {
       return <AlertCircle className="w-4 h-4" />;
@@ -332,6 +432,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const getPrioridadeColor = (prioridade: number) => {
     switch (prioridade) {
       case 1:
@@ -347,10 +448,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
   };
 
+
   const getPrioridadeTexto = (prioridade: number) => {
     const textos: Record<number, string> = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
     return textos[prioridade] || 'Não definida';
   };
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -374,6 +477,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           </div>
         </div>
 
+
         {/* CONTEÚDO ROLÁVEL */}
         <div className="p-6 overflow-y-auto flex-1">
           {process.env.NODE_ENV === 'development' && (
@@ -385,6 +489,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
             </div>
           )}
 
+
           {isLoading && (
             <div className="flex justify-center items-center h-32">
               <div className="text-center">
@@ -393,6 +498,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </div>
             </div>
           )}
+
 
           {error && !isLoading && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
@@ -408,6 +514,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </Button>
             </div>
           )}
+
 
           {!isLoading && !error && (
             <>
@@ -445,6 +552,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                         </div>
                       </div>
 
+
                       <div className="grid md:grid-cols-2 gap-4 text-sm mb-3">
                         <div>
                           <p className="text-gray-600">
@@ -467,6 +575,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                           )}
                         </div>
                       </div>
+
 
                       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                         <div className="flex items-center gap-2">
@@ -516,6 +625,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         </div>
       </div>
 
+
       {/* MODAL DE DETALHES - Estrutura ajustada */}
       {selectedChamado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
@@ -536,6 +646,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                 </Button>
               </div>
             </div>
+
 
             {/* CONTEÚDO ROLÁVEL */}
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
@@ -583,6 +694,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                 </div>
               )}
 
+
               {selectedChamado.descricao_status_chamado === 'Aguardando Resposta' && (
                 <div className="pt-4 border-t">
                   <Button
@@ -611,6 +723,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           </div>
         </div>
       )}
+
 
       {/* MODAL DE SOLUÇÃO IA - Estrutura ajustada */}
       {showSolucaoIA && solucaoIA && (
@@ -647,6 +760,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                 </p>
               </div>
 
+
               <div>
                 <label className="block text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   💡 Instruções para resolver o problema:
@@ -657,6 +771,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                   </ReactMarkdown>
                 </div>
               </div>
+
 
               <div className="border-t-2 border-gray-200 pt-6">
                 <div className="text-center mb-6">

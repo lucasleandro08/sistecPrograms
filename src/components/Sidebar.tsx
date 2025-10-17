@@ -46,12 +46,9 @@ export const Sidebar = () => {
   const isUserSectionActive = location.pathname === '/usuarios' || location.pathname === '/usuarios-deletados';
 
   return (
-    <div className="hidden md:flex w-64 bg-gray-900 text-white flex flex-col min-h-screen">
-      {/* Logo fixa no topo */}
-      <div
-        className="border-b border-gray-700 flex items-center justify-center sticky top-0 bg-gray-900 z-40"
-        style={{ height: '80px' }}
-      >
+    <div className="hidden md:flex w-64 bg-gray-900 text-white flex-col fixed left-0 top-0 h-screen z-40">
+      {/* Logo fixa no topo - mesma altura do header */}
+      <div className="border-b border-gray-700 flex items-center justify-center h-16 bg-gray-900">
         <img
           src="/lovable-uploads/d3655855-204d-4a0f-a98d-2d80537273b9.png"
           alt="Sistec"
