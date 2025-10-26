@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 
 
+
 interface Chamado {
   id_chamado: number;
   descricao_categoria_chamado: string;
@@ -20,6 +21,7 @@ interface Chamado {
 }
 
 
+
 interface SolucaoIA {
   id_resposta_ia: number;
   fk_chamados_id_chamado: number;
@@ -32,9 +34,11 @@ interface SolucaoIA {
 }
 
 
+
 interface MeusChamadosPopupProps {
   onClose: () => void;
 }
+
 
 
 export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
@@ -47,6 +51,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [enviandoFeedback, setEnviandoFeedback] = useState(false);
   const [loadingSolucao, setLoadingSolucao] = useState(false);
   const { user } = useAuth();
+
 
 
   // MutationObserver para forçar z-index do alertbox
@@ -68,6 +73,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     }
 
 
+
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -78,6 +84,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               node.querySelector('[id*="alertBox"]'),
               node.classList?.contains('alertBoxBody') ? node : null,
             ].filter(Boolean);
+
 
 
             alertElements.forEach((el) => {
@@ -103,16 +110,19 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     });
 
 
+
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
 
 
+
     return () => {
       observer.disconnect();
     };
   }, []);
+
 
 
   // Função auxiliar para exibir alertas
@@ -131,6 +141,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         btnTitle: 'Ok',
         border: true
       });
+
 
       setTimeout(() => {
         // Encontra todos os elementos do AlertBox
@@ -226,6 +237,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   };
 
 
+
   const fetchMeusChamados = async () => {
     try {
       setIsLoading(true);
@@ -234,9 +246,11 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       console.log('Buscando chamados do usuário:', user?.email);
 
 
+
       if (!user?.email) {
         throw new Error('Usuário não autenticado');
       }
+
 
 
       const response = await fetch('http://localhost:3001/api/chamados', {
@@ -248,13 +262,16 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       });
 
 
+
       console.log('Resposta da API chamados:', response.status);
+
 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
         throw new Error(errorData.message || `Erro HTTP: ${response.status}`);
       }
+
 
 
       const data = await response.json();
@@ -272,10 +289,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   };
 
 
+
   const buscarSolucaoIA = async (idChamado: number) => {
     try {
       setLoadingSolucao(true);
       console.log('Buscando solução IA para chamado:', idChamado);
+
 
 
       const response = await fetch(`http://localhost:3001/api/chamados/${idChamado}/solucao-ia`, {
@@ -285,6 +304,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           'x-user-email': user?.email || '',
         },
       });
+
 
 
       if (response.ok) {
@@ -305,13 +325,16 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   };
 
 
+
   const enviarFeedbackIA = async (feedback: 'DEU_CERTO' | 'DEU_ERRADO') => {
     if (!solucaoIA) return;
+
 
 
     try {
       setEnviandoFeedback(true);
       console.log('Enviando feedback:', feedback, 'para chamado:', solucaoIA.fk_chamados_id_chamado);
+
 
 
       const response = await fetch(`http://localhost:3001/api/chamados/${solucaoIA.fk_chamados_id_chamado}/feedback-ia`, {
@@ -324,10 +347,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       });
 
 
+
       // Fecha o modal de solução antes de mostrar alerta
       setShowSolucaoIA(false);
       setSolucaoIA(null);
       setEnviandoFeedback(false);
+
 
 
       setTimeout(() => {
@@ -348,6 +373,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       }, 100);
 
 
+
     } catch (error) {
       console.error('Erro ao enviar feedback:', error);
       
@@ -356,11 +382,13 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       setEnviandoFeedback(false);
 
 
+
       setTimeout(() => {
         showAlert('error', 'Erro de conexão ao enviar feedback');
       }, 100);
     }
   };
+
 
 
   useEffect(() => {
@@ -373,6 +401,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   }, [user]);
 
 
+
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return 'Data não disponível';
@@ -381,6 +410,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       return 'Data inválida';
     }
   };
+
 
 
   const getStatusColor = (status: string) => {
@@ -411,6 +441,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   };
 
 
+
   const getStatusIcon = (status: string) => {
     if (!status || status === null || status === undefined) {
       return <AlertCircle className="w-4 h-4" />;
@@ -433,6 +464,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   };
 
 
+
   const getPrioridadeColor = (prioridade: number) => {
     switch (prioridade) {
       case 1:
@@ -449,10 +481,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   };
 
 
+
   const getPrioridadeTexto = (prioridade: number) => {
     const textos: Record<number, string> = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
     return textos[prioridade] || 'Não definida';
   };
+
 
 
   return (
@@ -478,6 +512,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         </div>
 
 
+
         {/* CONTEÚDO ROLÁVEL */}
         <div className="p-6 overflow-y-auto flex-1">
           {process.env.NODE_ENV === 'development' && (
@@ -490,6 +525,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           )}
 
 
+
           {isLoading && (
             <div className="flex justify-center items-center h-32">
               <div className="text-center">
@@ -498,6 +534,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </div>
             </div>
           )}
+
 
 
           {error && !isLoading && (
@@ -514,6 +551,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </Button>
             </div>
           )}
+
 
 
           {!isLoading && !error && (
@@ -553,6 +591,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                       </div>
 
 
+
                       <div className="grid md:grid-cols-2 gap-4 text-sm mb-3">
                         <div>
                           <p className="text-gray-600">
@@ -575,6 +614,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                           )}
                         </div>
                       </div>
+
 
 
                       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
@@ -626,6 +666,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       </div>
 
 
+
       {/* MODAL DE DETALHES - Estrutura ajustada */}
       {selectedChamado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
@@ -646,6 +687,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                 </Button>
               </div>
             </div>
+
 
 
             {/* CONTEÚDO ROLÁVEL */}
@@ -695,6 +737,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               )}
 
 
+
               {selectedChamado.descricao_status_chamado === 'Aguardando Resposta' && (
                 <div className="pt-4 border-t">
                   <Button
@@ -723,6 +766,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           </div>
         </div>
       )}
+
 
 
       {/* MODAL DE SOLUÇÃO IA - Estrutura ajustada */}
@@ -761,6 +805,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </div>
 
 
+
               <div>
                 <label className="block text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   💡 Instruções para resolver o problema:
@@ -773,6 +818,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </div>
 
 
+
               <div className="border-t-2 border-gray-200 pt-6">
                 <div className="text-center mb-6">
                   <h4 className="text-xl font-bold text-gray-900 mb-2">
@@ -783,6 +829,15 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                   </p>
                 </div>
                 
+                {/* CAIXA EXPLICATIVA MOVIDA ACIMA DOS BOTÕES */}
+                <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800 text-center">
+                    <strong>📌 O que acontece depois:</strong><br />
+                    • <strong>"Deu Certo"</strong>: Seu chamado será marcado como resolvido e fechado automaticamente<br />
+                    • <strong>"Não Funcionou"</strong>: Seu chamado será encaminhado para um analista humano que entrará em contato
+                  </p>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <Button
                     onClick={() => enviarFeedbackIA('DEU_CERTO')}
@@ -810,14 +865,6 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                     )}
                     ❌ Não Funcionou
                   </Button>
-                </div>
-                
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800 text-center">
-                    <strong>📌 O que acontece depois:</strong><br />
-                    • <strong>"Deu Certo"</strong>: Seu chamado será marcado como resolvido e fechado automaticamente<br />
-                    • <strong>"Não Funcionou"</strong>: Seu chamado será encaminhado para um analista humano que entrará em contato
-                  </p>
                 </div>
               </div>
             </div>

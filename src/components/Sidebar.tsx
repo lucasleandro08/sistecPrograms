@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Home, User, HelpCircle, LayoutGrid, ChevronDown, ChevronRight, RotateCcw } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(
     location.pathname === '/usuarios' || location.pathname === '/usuarios-deletados'
   );
@@ -12,21 +14,30 @@ export const Sidebar = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
   };
 
+  // Função para verificar se o item pode ser exibido
+  const canViewMenuItem = (niveisPermitidos: number[]) => {
+    if (!user?.perfil?.nivel_acesso) return false;
+    return niveisPermitidos.includes(user.perfil.nivel_acesso);
+  };
+
   const menuItems = [
     {
       title: 'Home',
       path: '/',
-      icon: Home
+      icon: Home,
+      niveisPermitidos: [1, 2, 3, 4, 5] // Todos
     },
     {
       title: 'Dashboard',
       path: '/dashboard',
-      icon: LayoutGrid
+      icon: LayoutGrid,
+      niveisPermitidos: [2, 4, 5] // Analista, Gerente e Admin (SEM Gestor)
     },
     {
       title: 'Chamados',
       path: '/chamados',
-      icon: HelpCircle
+      icon: HelpCircle,
+      niveisPermitidos: [1, 2, 3, 4, 5] // Todos
     }
   ];
 
@@ -34,6 +45,7 @@ export const Sidebar = () => {
     title: 'Gerenciar Usuários',
     path: '/usuarios',
     icon: User,
+    niveisPermitidos: [3, 4, 5], // Gestor, Gerente e Admin
     subItems: [
       {
         title: 'Restaurar Usuários',
@@ -44,6 +56,9 @@ export const Sidebar = () => {
   };
 
   const isUserSectionActive = location.pathname === '/usuarios' || location.pathname === '/usuarios-deletados';
+  
+  // Verifica se pode ver o menu de usuários
+  const canViewUserMenu = canViewMenuItem(userMenuItem.niveisPermitidos);
 
   return (
     <div className="hidden md:flex w-64 bg-gray-900 text-white flex-col fixed left-0 top-0 h-screen z-40">
@@ -60,6 +75,11 @@ export const Sidebar = () => {
       <nav className="flex-grow p-4 overflow-y-auto">
         <ul className="space-y-2">
           {menuItems.map((item) => {
+            // Verifica se o usuário pode ver este item
+            if (!canViewMenuItem(item.niveisPermitidos)) {
+              return null;
+            }
+
             const isActive = location.pathname === item.path;
             return (
               <li key={item.path}>
@@ -78,61 +98,64 @@ export const Sidebar = () => {
             );
           })}
 
-          <li>
-            <div
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
-                isUserSectionActive
-                  ? 'bg-orange-500 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              }`}
-              onClick={toggleUserMenu}
-            >
-              <User className="w-5 h-5" />
-              <span className="flex-1">{userMenuItem.title}</span>
-              {isUserMenuOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
+          {/* Menu de Gerenciar Usuários - só aparece se tiver permissão */}
+          {canViewUserMenu && (
+            <li>
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+                  isUserSectionActive
+                    ? 'bg-orange-500 text-white'
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                }`}
+                onClick={toggleUserMenu}
+              >
+                <User className="w-5 h-5" />
+                <span className="flex-1">{userMenuItem.title}</span>
+                {isUserMenuOpen ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </div>
+
+              {isUserMenuOpen && (
+                <ul className="mt-2 ml-8 space-y-1">
+                  <li>
+                    <Link
+                      to={userMenuItem.path}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
+                        location.pathname === userMenuItem.path
+                          ? 'bg-orange-400 text-white'
+                          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                      }`}
+                    >
+                      <div className="w-2 h-2 bg-current rounded-full opacity-60"></div>
+                      <span>Lista de Usuários</span>
+                    </Link>
+                  </li>
+
+                  {userMenuItem.subItems.map((subItem) => {
+                    const isSubActive = location.pathname === subItem.path;
+                    return (
+                      <li key={subItem.path}>
+                        <Link
+                          to={subItem.path}
+                          className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
+                            isSubActive
+                              ? 'bg-orange-400 text-white'
+                              : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                          }`}
+                        >
+                          <subItem.icon className="w-4 h-4" />
+                          <span>{subItem.title}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
-            </div>
-
-            {isUserMenuOpen && (
-              <ul className="mt-2 ml-8 space-y-1">
-                <li>
-                  <Link
-                    to={userMenuItem.path}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
-                      location.pathname === userMenuItem.path
-                        ? 'bg-orange-400 text-white'
-                        : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                    }`}
-                  >
-                    <div className="w-2 h-2 bg-current rounded-full opacity-60"></div>
-                    <span>Lista de Usuários</span>
-                  </Link>
-                </li>
-
-                {userMenuItem.subItems.map((subItem) => {
-                  const isSubActive = location.pathname === subItem.path;
-                  return (
-                    <li key={subItem.path}>
-                      <Link
-                        to={subItem.path}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
-                          isSubActive
-                            ? 'bg-orange-400 text-white'
-                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                        }`}
-                      >
-                        <subItem.icon className="w-4 h-4" />
-                        <span>{subItem.title}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </li>
+            </li>
+          )}
         </ul>
       </nav>
     </div>

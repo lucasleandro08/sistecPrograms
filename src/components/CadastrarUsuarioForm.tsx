@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, AlertCircle, UserPlus, Edit, Trash2 } from 'lucide-react';
+import { X, AlertCircle, UserPlus, Edit, Trash2, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+
 
 const formSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -22,7 +23,9 @@ const formSchema = z.object({
   senha: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
 });
 
+
 type FormData = z.infer<typeof formSchema>;
+
 
 interface CadastrarUsuarioFormProps {
   onClose: () => void;
@@ -32,6 +35,7 @@ interface CadastrarUsuarioFormProps {
   userData?: any;
   onSuccess?: () => void;
 }
+
 
 export const CadastrarUsuarioForm = ({ 
   onClose, 
@@ -47,11 +51,14 @@ export const CadastrarUsuarioForm = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
   const [processando, setProcessando] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { user } = useAuth();
+
 
   useEffect(() => {
     setMotivoInterno(motivo || '');
   }, [motivo]);
+
 
   // MutationObserver para forçar z-index do alertbox
   useEffect(() => {
@@ -71,6 +78,7 @@ export const CadastrarUsuarioForm = ({
       document.head.appendChild(style);
     }
 
+
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -81,6 +89,7 @@ export const CadastrarUsuarioForm = ({
               node.querySelector('[id*="alertBox"]'),
               node.classList?.contains('alertBoxBody') ? node : null,
             ].filter(Boolean);
+
 
             alertElements.forEach((el) => {
               if (el instanceof HTMLElement) {
@@ -104,15 +113,18 @@ export const CadastrarUsuarioForm = ({
       });
     });
 
+
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
 
+
     return () => {
       observer.disconnect();
     };
   }, []);
+
 
   const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
     if (typeof window !== 'undefined' && (window as any).alertbox) {
@@ -129,6 +141,7 @@ export const CadastrarUsuarioForm = ({
         btnTitle: 'Ok',
         border: true
       });
+
 
       setTimeout(() => {
         const alertBox = document.querySelector('.alertBoxBody') || 
@@ -153,6 +166,7 @@ export const CadastrarUsuarioForm = ({
     }
   };
 
+
   useEffect(() => {
     console.log('=== DEBUG USUÁRIO FORMULÁRIO ===');
     console.log('Mode:', mode);
@@ -166,6 +180,7 @@ export const CadastrarUsuarioForm = ({
     console.log('===============================');
   }, [user, userData, mode, motivoInterno]);
 
+
   const PERFIS_ACESSO = [
     { id: 1, nome: 'Usuário', nivel: 1 },
     { id: 2, nome: 'Analista de Suporte', nivel: 2 },
@@ -173,6 +188,7 @@ export const CadastrarUsuarioForm = ({
     { id: 3, nome: 'Gerente de Suporte', nivel: 4 }, 
     { id: 4, nome: 'Administrador', nivel: 5 } 
   ];
+
 
   const {
     register,
@@ -194,6 +210,85 @@ export const CadastrarUsuarioForm = ({
     } : {}
   });
 
+
+  // Função para gerar email automaticamente
+  const gerarEmail = (nome: string, sobrenome: string) => {
+    if (!nome || !sobrenome) return '';
+    
+    // Remove acentos e caracteres especiais
+    const removerAcentos = (str: string) => {
+      return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    };
+    
+    // Pega o primeiro nome
+    const primeiroNome = removerAcentos(nome.trim().split(' ')[0]).toLowerCase();
+    
+    // Pega o último sobrenome
+    const sobrenomes = sobrenome.trim().split(' ').filter(s => s.length > 0);
+    const ultimoSobrenome = sobrenomes.length > 0 
+      ? removerAcentos(sobrenomes[sobrenomes.length - 1]).toLowerCase() 
+      : '';
+    
+    if (!primeiroNome || !ultimoSobrenome) return '';
+    
+    return `${primeiroNome}.${ultimoSobrenome}@sistec.com.br`;
+  };
+
+
+  // Função para gerar senha padrão: primeiroNome + ÚLTIMOS 4 números do telefone
+  const gerarSenhaPadrao = (nome: string, telefone: string) => {
+    if (!nome || !telefone) return '';
+    
+    // Remove acentos do nome
+    const removerAcentos = (str: string) => {
+      return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    };
+    
+    // Pega o primeiro nome
+    const primeiroNome = removerAcentos(nome.trim().split(' ')[0]);
+    
+    // Extrai apenas números do telefone
+    const apenasNumeros = telefone.replace(/\D/g, '');
+    
+    // Pega os ÚLTIMOS 4 dígitos do telefone (ou menos se não tiver 4)
+    const ultimosNumeros = apenasNumeros.slice(-4);
+    
+    if (!primeiroNome || !ultimosNumeros) return '';
+    
+    // Retorna: PrimeiroNome + últimos 4 números
+    // Exemplo: João com telefone (11) 98765-4321 = Joao4321
+    return `${primeiroNome}${ultimosNumeros}`;
+  };
+
+
+  // Watch para mudanças nos campos nome, sobrenome e telefone
+  const nome = watch('nome');
+  const sobrenome = watch('sobrenome');
+  const telefone = watch('telefone');
+
+
+  // Atualiza o email automaticamente quando nome ou sobrenome mudam
+  useEffect(() => {
+    if (mode === 'cadastrar' && nome && sobrenome) {
+      const emailGerado = gerarEmail(nome, sobrenome);
+      if (emailGerado) {
+        setValue('email', emailGerado);
+      }
+    }
+  }, [nome, sobrenome, mode, setValue]);
+
+
+  // Atualiza a senha automaticamente quando nome ou telefone mudam
+  useEffect(() => {
+    if (mode === 'cadastrar' && nome && telefone) {
+      const senhaGerada = gerarSenhaPadrao(nome, telefone);
+      if (senhaGerada) {
+        setValue('senha', senhaGerada);
+      }
+    }
+  }, [nome, telefone, mode, setValue]);
+
+
   const handleMotivoChange = (value: string) => {
     console.log('Motivo alterado para:', value);
     setMotivoInterno(value);
@@ -202,16 +297,18 @@ export const CadastrarUsuarioForm = ({
     }
   };
 
+
   const cadastrarUsuario = async (data: FormData) => {
     const userData = {
       nome_usuario: `${data.nome} ${data.sobrenome}`,
       setor_usuario: data.setor,
       cargo_usuario: data.cargo,
       email: data.email,
-      senha: data.senha || 'senha123',
+      senha: data.senha || gerarSenhaPadrao(data.nome, data.telefone),
       tel_usuarios: data.telefone,
       id_perfil_usuario: parseInt(data.id_perfil_usuario),
     };
+
 
     const response = await fetch('http://localhost:3001/api/users', {
       method: 'POST',
@@ -222,13 +319,16 @@ export const CadastrarUsuarioForm = ({
       body: JSON.stringify(userData),
     });
 
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Erro ao cadastrar usuário');
     }
 
+
     return response.json();
   };
+
 
   const editarUsuario = async (data: FormData) => {
     console.log('Iniciando edição do usuário');
@@ -250,6 +350,7 @@ export const CadastrarUsuarioForm = ({
       id_perfil_usuario: parseInt(data.id_perfil_usuario),
     };
 
+
     const response = await fetch(`http://localhost:3001/api/users/${userData.id_usuario}`, {
       method: 'PUT',
       headers: {
@@ -259,13 +360,16 @@ export const CadastrarUsuarioForm = ({
       body: JSON.stringify(updateData),
     });
 
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Erro ao editar usuário');
     }
 
+
     return response.json();
   };
+
 
   const desativarUsuario = async () => {
     if (!userData || !userData.id_usuario) {
@@ -279,6 +383,7 @@ export const CadastrarUsuarioForm = ({
       throw new Error('Motivo da desativação deve ter pelo menos 10 caracteres');
     }
 
+
     const response = await fetch(`http://localhost:3001/api/users/${userData.id_usuario}`, {
       method: 'DELETE',
       headers: {
@@ -288,13 +393,16 @@ export const CadastrarUsuarioForm = ({
       body: JSON.stringify({ motivo: motivoFinal }),
     });
 
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Erro ao desativar usuário');
     }
 
+
     return response.json();
   };
+
 
   // Validação antes de abrir o modal de confirmação
   const handleFormSubmit = (data: FormData) => {
@@ -303,18 +411,22 @@ export const CadastrarUsuarioForm = ({
       return;
     }
 
+
     setPendingFormData(data);
     setShowConfirmModal(true);
   };
+
 
   // Execução confirmada
   const handleConfirm = async () => {
     if (!pendingFormData) return;
 
+
     try {
       setProcessando(true);
       let result;
       let successMessage = '';
+
 
       switch (mode) {
         case 'cadastrar':
@@ -333,6 +445,7 @@ export const CadastrarUsuarioForm = ({
           break;
       }
 
+
       console.log('Sucesso:', result);
       
       setShowConfirmModal(false);
@@ -340,6 +453,7 @@ export const CadastrarUsuarioForm = ({
       setProcessando(false);
       reset();
       onClose();
+
 
       setTimeout(() => {
         showAlert('success', successMessage);
@@ -349,6 +463,7 @@ export const CadastrarUsuarioForm = ({
         }
       }, 100);
 
+
     } catch (err: any) {
       console.error('Erro:', err);
       const errorMessage = err.message || 'Erro inesperado';
@@ -357,11 +472,13 @@ export const CadastrarUsuarioForm = ({
       setPendingFormData(null);
       setProcessando(false);
 
+
       setTimeout(() => {
         showAlert('error', errorMessage);
       }, 100);
     }
   };
+
 
   const canCreateProfile = (perfilNivel: number) => {
     console.log('Verificando perfil:', perfilNivel, 'Usuário nível:', user?.perfil?.nivel_acesso);
@@ -385,9 +502,11 @@ export const CadastrarUsuarioForm = ({
     return false;
   };
 
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
 
   const getTitle = () => {
     switch (mode) {
@@ -400,6 +519,7 @@ export const CadastrarUsuarioForm = ({
     }
   };
 
+
   const getButtonText = () => {
     switch (mode) {
       case 'editar':
@@ -410,6 +530,7 @@ export const CadastrarUsuarioForm = ({
         return 'Cadastrar';
     }
   };
+
 
   const getConfirmationIcon = () => {
     switch (mode) {
@@ -422,6 +543,7 @@ export const CadastrarUsuarioForm = ({
     }
   };
 
+
   const getConfirmationColor = () => {
     switch (mode) {
       case 'cadastrar':
@@ -432,6 +554,7 @@ export const CadastrarUsuarioForm = ({
         return { bg: 'bg-red-100', text: 'text-red-600', btn: 'bg-red-600 hover:bg-red-700', header: 'bg-red-600' };
     }
   };
+
 
   const getConfirmationMessage = () => {
     if (!pendingFormData) return '';
@@ -446,7 +569,9 @@ export const CadastrarUsuarioForm = ({
     }
   };
 
+
   const colors = getConfirmationColor();
+
 
   return (
     <>
@@ -469,12 +594,14 @@ export const CadastrarUsuarioForm = ({
             </div>
           </div>
 
+
           <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-8">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 {error}
               </div>
             )}
+
 
             <div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Dados pessoais</h3>
@@ -508,6 +635,7 @@ export const CadastrarUsuarioForm = ({
               </div>
             </div>
 
+
             <div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Contato:</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -520,9 +648,15 @@ export const CadastrarUsuarioForm = ({
                     className="mt-1"
                     placeholder="Digite o e-mail"
                     disabled={mode === 'desativar'}
+                    readOnly={mode === 'cadastrar'}
                   />
                   {errors.email && (
                     <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                  )}
+                  {mode === 'cadastrar' && (
+                    <p className="text-gray-500 text-xs mt-1">
+                      Email gerado automaticamente
+                    </p>
                   )}
                 </div>
                 <div>
@@ -550,6 +684,7 @@ export const CadastrarUsuarioForm = ({
                 </div>
               </div>
             </div>
+
 
             <div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Informações Profissionais</h3>
@@ -611,26 +746,42 @@ export const CadastrarUsuarioForm = ({
                   )}
                 </div>
 
+
                 {mode === 'cadastrar' && (
                   <div>
                     <Label htmlFor="senha" className="text-purple-600">Senha Inicial</Label>
-                    <Input
-                      id="senha"
-                      type="password"
-                      {...register('senha')}
-                      className="mt-1"
-                      placeholder="Digite a senha inicial (min. 6 caracteres)"
-                    />
+                    <div className="relative mt-1">
+                      <Input
+                        id="senha"
+                        type={showPassword ? 'text' : 'password'}
+                        {...register('senha')}
+                        placeholder="Senha gerada automaticamente"
+                        readOnly
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                     {errors.senha && (
                       <p className="text-red-500 text-sm mt-1">{errors.senha.message}</p>
                     )}
                     <p className="text-gray-500 text-xs mt-1">
-                      Se não informada, será usado "senha123" como padrão
+                      Senha: PrimeiroNome + últimos 4 dígitos do telefone
                     </p>
                   </div>
                 )}
               </div>
             </div>
+
 
             {mode === 'desativar' && (
               <div>
@@ -663,6 +814,7 @@ export const CadastrarUsuarioForm = ({
               </div>
             )}
 
+
             <div className="flex gap-4 justify-end pt-6">
               <Button
                 type="button"
@@ -685,6 +837,7 @@ export const CadastrarUsuarioForm = ({
           </form>
         </div>
       </div>
+
 
       {/* Modal de Confirmação */}
       {showConfirmModal && pendingFormData && (
@@ -711,6 +864,7 @@ export const CadastrarUsuarioForm = ({
                   </div>
                 )}
               </div>
+
 
               <div className="flex gap-3">
                 <Button
