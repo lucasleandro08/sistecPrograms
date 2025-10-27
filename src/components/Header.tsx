@@ -1,41 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bell, Menu, User, LogOut, AlertTriangle, X, CheckCheck, 
-  CheckCircle, XCircle, Info, Calendar, Clock, AlertCircle, Eye
+  CheckCircle, XCircle, Info, Clock
 } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { MobileMenu } from './MobileMenu';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-interface ChamadoDetalhes {
-  id_chamado: number;
-  descricao_categoria_chamado: string;
-  descricao_problema_chamado: string;
-  descricao_status_chamado: string;
-  prioridade_chamado: number;
-  data_abertura: string;
-  data_resolucao?: string;
-  usuario_abertura: string;
-  email_usuario: string;
-  descricao_detalhada?: string;
-  titulo_chamado?: string;
-}
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showDetalhes, setShowDetalhes] = useState(false);
-  const [selectedChamado, setSelectedChamado] = useState<ChamadoDetalhes | null>(null);
   const [processando, setProcessando] = useState(false);
-  const [loadingChamado, setLoadingChamado] = useState(false);
   const { user, logout } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   
@@ -61,46 +42,13 @@ export const Header = () => {
     };
   }, [isNotificationOpen, isProfilePanelOpen]);
 
-  const fetchChamadoDetalhes = async (idChamado: number) => {
-    try {
-      setLoadingChamado(true);
-      console.log('🔍 Buscando detalhes do chamado:', idChamado);
-
-      const response = await fetch(`http://localhost:3001/api/chamados/${idChamado}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-email': user?.email || '',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Dados do chamado recebidos:', data);
-        setSelectedChamado(data);
-        setShowDetalhes(true);
-      } else {
-        const errorData = await response.json();
-        alert(`Erro ao buscar detalhes: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error('❌ Erro ao buscar chamado:', error);
-      alert('Erro de conexão ao buscar chamado');
-    } finally {
-      setLoadingChamado(false);
-    }
-  };
-
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = (notification: any) => {
     console.log('🔔 Notificação clicada:', notification);
     
+    // Apenas marca como lida, sem abrir modal
     if (!notification.lida) {
       markAsRead(notification.id_notificacao);
     }
-    
-    setIsNotificationOpen(false);
-    
-    // Buscar detalhes do chamado e abrir modal
-    await fetchChamadoDetalhes(notification.id_chamado);
   };
 
   const handleLogoutClick = () => {
@@ -137,66 +85,6 @@ export const Header = () => {
       case 'error': return 'bg-red-50 border-l-4 border-red-500';
       case 'warning': return 'bg-orange-50 border-l-4 border-orange-500';
       default: return 'bg-blue-50 border-l-4 border-blue-500';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      if (!dateString) return 'Data não disponível';
-      return new Date(dateString).toLocaleString('pt-BR');
-    } catch {
-      return 'Data inválida';
-    }
-  };
-
-  const getPrioridadeTexto = (prioridade: number) => {
-    const textos: Record<number, string> = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
-    return textos[prioridade] || 'Não definida';
-  };
-
-  const getPrioridadeColor = (prioridade: number) => {
-    switch (prioridade) {
-      case 1: return 'bg-blue-100 text-blue-800';
-      case 2: return 'bg-yellow-100 text-yellow-800';
-      case 3: return 'bg-orange-100 text-orange-800';
-      case 4: return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
-    
-    switch (status.toLowerCase()) {
-      case 'aberto': return 'bg-blue-100 text-blue-800';
-      case 'aprovado': return 'bg-green-100 text-green-800';
-      case 'rejeitado': return 'bg-red-100 text-red-800';
-      case 'triagem ia': return 'bg-purple-100 text-purple-800';
-      case 'aguardando resposta': return 'bg-yellow-100 text-yellow-800';
-      case 'com analista': return 'bg-orange-100 text-orange-800';
-      case 'escalado': return 'bg-purple-100 text-purple-800';
-      case 'resolvido': return 'bg-emerald-100 text-emerald-800';
-      case 'fechado': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    if (!status) return <AlertCircle className="w-4 h-4" />;
-    
-    switch (status.toLowerCase()) {
-      case 'aberto':
-        return <Clock className="w-4 h-4" />;
-      case 'aprovado':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'rejeitado':
-        return <XCircle className="w-4 h-4" />;
-      case 'aguardando resposta':
-        return <Clock className="w-4 h-4" />;
-      case 'resolvido':
-        return <CheckCircle className="w-4 h-4" />;
-      default:
-        return <AlertCircle className="w-4 h-4" />;
     }
   };
 
@@ -407,109 +295,6 @@ export const Header = () => {
           onClose={() => setIsMobileMenuOpen(false)}
         />
       </header>
-
-      {/* Modal de Detalhes do Chamado (Igual ao MeusChamadosPopup) */}
-      {showDetalhes && selectedChamado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-            {/* CABEÇALHO FIXO */}
-            <div className="bg-gray-800 text-white p-4 rounded-t-lg flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">
-                  Detalhes do Chamado #{selectedChamado.id_chamado}
-                </h3>
-                <Button
-                  onClick={() => {
-                    setShowDetalhes(false);
-                    setSelectedChamado(null);
-                  }}
-                  variant="ghost"
-                  size="icon"
-                  className="text-white hover:bg-gray-700"
-                  type="button"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
-            {/* CONTEÚDO ROLÁVEL */}
-            <div className="p-6 space-y-4 overflow-y-auto flex-1">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedChamado.descricao_status_chamado || '')}`}>
-                    {getStatusIcon(selectedChamado.descricao_status_chamado || '')}
-                    {selectedChamado.descricao_status_chamado || 'Status não informado'}
-                  </span>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
-                  <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getPrioridadeColor(selectedChamado.prioridade_chamado)}`}>
-                    {getPrioridadeTexto(selectedChamado.prioridade_chamado)}
-                  </span>
-                </div>
-              </div>
-
-              {selectedChamado.titulo_chamado && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                  <p className="text-gray-600 font-medium">{selectedChamado.titulo_chamado}</p>
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                <p className="text-gray-600">{selectedChamado.descricao_categoria_chamado || 'Não informado'}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Problema</label>
-                <p className="text-gray-600">{selectedChamado.descricao_problema_chamado || 'Não informado'}</p>
-              </div>
-
-              {selectedChamado.descricao_detalhada && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição Detalhada</label>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
-                      {selectedChamado.descricao_detalhada}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data de Abertura</label>
-                <p className="text-gray-600 flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  {formatDate(selectedChamado.data_abertura)}
-                </p>
-              </div>
-              
-              {selectedChamado.data_resolucao && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data de Resolução</label>
-                  <p className="text-gray-600 flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" />
-                    {formatDate(selectedChamado.data_resolucao)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading Overlay */}
-      {loadingChamado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
-          <div className="bg-white rounded-lg p-6 flex flex-col items-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
-            <p className="text-gray-600">Carregando detalhes do chamado...</p>
-          </div>
-        </div>
-      )}
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (

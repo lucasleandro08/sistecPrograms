@@ -1,7 +1,6 @@
 import pool from '../config/db.js';
 import { triagemChamado, resolverChamado } from '../services/geminiService.js';
 
-
 export const createChamadoService = async (dadosChamado) => {
   const client = await pool.connect();
   try {
@@ -50,13 +49,44 @@ export const createChamadoService = async (dadosChamado) => {
     );
 
     if (descricao_detalhada) {
-      const linhas = descricao_detalhada.split('\n');
-      const tituloMatch = linhas.find((linha) =>
-        linha.startsWith('**Título:**'),
+      // Extrair título de forma inteligente
+      const linhas = descricao_detalhada.split('\n').filter(l => l.trim().length > 0);
+      let titulo = 'Sem título';
+      
+      // Opção 1: Procurar por "**Título:**" ou "Título:" (Markdown)
+      const tituloMarkdown = linhas.find((linha) =>
+        linha.startsWith('**Título:**') || linha.startsWith('Título:')
       );
-      const titulo = tituloMatch
-        ? tituloMatch.replace('**Título:**', '').trim()
-        : 'Sem título';
+      
+      if (tituloMarkdown) {
+        titulo = tituloMarkdown
+          .replace(/^\*\*Título:\*\*\s*/i, '')
+          .replace(/^Título:\s*/i, '')
+          .trim();
+        console.log('✅ Título encontrado (Markdown):', titulo);
+      } 
+      // Opção 2: Usar a primeira linha não vazia como título
+      else if (linhas.length > 0 && linhas[0].trim().length > 0) {
+        titulo = linhas[0].trim();
+        // Limitar tamanho
+        if (titulo.length > 100) {
+          titulo = titulo.substring(0, 97) + '...';
+        }
+        console.log('✅ Título extraído (primeira linha):', titulo);
+      }
+      // Opção 3: Usar descrição do problema como fallback
+      else if (descricao_problema) {
+        // Formatar descrição do problema para título legível
+        titulo = descricao_problema
+          .replace(/-/g, ' ')
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        console.log('✅ Título gerado do problema:', titulo);
+      }
+      
+      console.log('📝 Salvando título final:', titulo);
+      
       await client.query(
         `
         INSERT INTO detalhes_chamado (fk_chamados_id_chamado, titulo_chamado, descricao_detalhada)
