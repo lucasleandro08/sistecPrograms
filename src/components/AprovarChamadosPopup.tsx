@@ -15,6 +15,8 @@ interface ChamadoParaAprovacao {
   data_abertura: string;
   usuario_abertura: string;
   email_usuario: string;
+  descricao_detalhada?: string;  // ← ADICIONADO
+  titulo_chamado?: string;        // ← ADICIONADO
 }
 
 interface AprovarChamadosPopupProps {
@@ -562,6 +564,14 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
                   <p className="text-gray-600">{selectedChamado.email_usuario}</p>
                 </div>
               </div>
+
+              {/* TÍTULO DO CHAMADO */}
+              {selectedChamado.titulo_chamado && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                  <p className="text-gray-600 font-medium">{selectedChamado.titulo_chamado}</p>
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
@@ -572,6 +582,18 @@ export const AprovarChamadosPopup = ({ onClose }: AprovarChamadosPopupProps) => 
                 <label className="block text-sm font-medium text-gray-700 mb-1">Problema</label>
                 <p className="text-gray-600">{selectedChamado.descricao_problema_chamado}</p>
               </div>
+
+              {/* DESCRIÇÃO DETALHADA */}
+              {selectedChamado.descricao_detalhada && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição Detalhada</label>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                      {selectedChamado.descricao_detalhada}
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data de Abertura</label>

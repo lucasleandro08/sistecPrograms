@@ -146,7 +146,8 @@ export const getChamadosComDetalhesService = async (filtros = {}) => {
       u.email as email_usuario,
       ur.nome_usuario as usuario_resolucao,
       det.titulo_chamado,
-      det.descricao_detalhada
+      det.descricao_detalhada,
+      c.motivo_recusa as motivo_reprovacao
     FROM chamados c
     LEFT JOIN categoria_chamado cat ON c.id_chamado = cat.fk_chamados_id_chamado
     LEFT JOIN problema_chamado prob ON c.id_chamado = prob.fk_chamados_id_chamado
@@ -172,7 +173,8 @@ export const getChamadoByIdService = async (idChamado) => {
       u.email as email_usuario,
       ur.nome_usuario as usuario_resolucao,
       det.titulo_chamado,
-      det.descricao_detalhada
+      det.descricao_detalhada,
+      c.motivo_recusa as motivo_reprovacao
     FROM chamados c
     LEFT JOIN categoria_chamado cat ON c.id_chamado = cat.fk_chamados_id_chamado
     LEFT JOIN problema_chamado prob ON c.id_chamado = prob.fk_chamados_id_chamado
@@ -248,15 +250,50 @@ export const aprovarChamadoService = async (idChamado, gestorId) => {
 };
 
 export const rejeitarChamadoService = async (idChamado, motivo, gestorId) => {
+  const client = await pool.connect();
+  
   try {
-    await updateStatusChamadoService(idChamado, 'Rejeitado', gestorId);
+    await client.query('BEGIN');
     
-    console.log('Chamado rejeitado. Motivo:', motivo);
+    // 1. Atualizar status para Rejeitado
+    await client.query(`
+      UPDATE status_chamado 
+      SET descricao_status_chamado = 'Rejeitado'
+      WHERE fk_chamados_id_chamado = $1
+    `, [idChamado]);
     
+    // 2. Atualizar data de aprovação/recusa E salvar o motivo
+    await client.query(`
+      UPDATE chamados 
+      SET data_aprovacao_recusa = NOW(),
+          motivo_recusa = $2
+      WHERE id_chamado = $1
+    `, [idChamado, motivo]);
+    
+    // 3. TAMBÉM salvar na tabela respostas_ia (backup/histórico)
+    await client.query(`
+      INSERT INTO respostas_ia (
+        fk_chamados_id_chamado, 
+        tipo_resposta, 
+        solucao_ia
+      ) VALUES ($1, $2, $3)
+    `, [
+      idChamado, 
+      'REPROVACAO', 
+      motivo
+    ]);
+    
+    await client.query('COMMIT');
+    
+    console.log('✅ Chamado rejeitado:', idChamado, 'Gestor:', gestorId, 'Motivo:', motivo);
     return true;
+    
   } catch (error) {
-    console.error('Erro ao rejeitar chamado:', error);
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao rejeitar chamado:', error);
     throw error;
+  } finally {
+    client.release();
   }
 };
 
