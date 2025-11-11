@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { X, Calendar, AlertCircle, Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,7 +47,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const [loadingSolucao, setLoadingSolucao] = useState(false);
   const { user } = useAuth();
 
-  // MutationObserver para forçar z-index do alertbox
+  // MutationObserver para for├ºar z-index do alertbox
   useEffect(() => {
     const style = document.createElement('style');
     style.id = 'alertbox-force-zindex-meus-chamados';
@@ -108,14 +108,14 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
     };
   }, []);
 
-  // Função auxiliar para exibir alertas
+  // Fun├º├úo auxiliar para exibir alertas
   const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
     if (typeof window !== 'undefined' && (window as any).alertbox) {
       const config = {
         success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#16a34a' },
         error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#dc2626' },
-        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#ea580c' },
-        info: { alertIcon: 'info' as const, title: 'Informação', themeColor: '#3b82f6', btnColor: '#3b82f6' }
+        warning: { alertIcon: 'warning' as const, title: 'Aten├º├úo!', themeColor: '#ea580c', btnColor: '#ea580c' },
+        info: { alertIcon: 'info' as const, title: 'Informa├º├úo', themeColor: '#3b82f6', btnColor: '#3b82f6' }
       };
       
       (window as any).alertbox.render({
@@ -215,10 +215,10 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       setIsLoading(true);
       setError('');
       
-      console.log('Buscando chamados do usuário:', user?.email);
+      console.log('Buscando chamados do usu├írio:', user?.email);
 
       if (!user?.email) {
-        throw new Error('Usuário não autenticado');
+        throw new Error('Usu├írio n├úo autenticado');
       }
 
       const response = await fetch('http://localhost:3001/api/chamados', {
@@ -253,7 +253,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   const buscarSolucaoIA = async (idChamado: number) => {
     try {
       setLoadingSolucao(true);
-      console.log('Buscando solução IA para chamado:', idChamado);
+      console.log('Buscando solu├º├úo IA para chamado:', idChamado);
 
       const response = await fetch(`http://localhost:3001/api/chamados/${idChamado}/solucao-ia`, {
         method: 'GET',
@@ -265,16 +265,16 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Solução IA recebida:', data.data);
+        console.log('Solu├º├úo IA recebida:', data.data);
         setSolucaoIA(data.data);
         setShowSolucaoIA(true);
       } else {
         const errorData = await response.json();
-        showAlert('error', `Erro ao buscar solução: ${errorData.message}`);
+        showAlert('error', `Erro ao buscar solu├º├úo: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('Erro ao buscar solução IA:', error);
-      showAlert('error', 'Erro de conexão ao buscar solução da IA');
+      console.error('Erro ao buscar solu├º├úo IA:', error);
+      showAlert('error', 'Erro de conex├úo ao buscar solu├º├úo da IA');
     } finally {
       setLoadingSolucao(false);
     }
@@ -303,9 +303,9 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       setTimeout(() => {
         if (response.ok) {
           if (feedback === 'DEU_CERTO') {
-            showAlert('success', 'Ótimo! Seu chamado foi marcado como resolvido.');
+            showAlert('success', '├ôtimo! Seu chamado foi marcado como resolvido.');
           } else {
-            showAlert('info', 'Seu chamado foi encaminhado para um analista humano que entrará em contato.');
+            showAlert('info', 'Seu chamado foi encaminhado para um analista humano que entrar├í em contato.');
           }
           fetchMeusChamados();
         } else {
@@ -325,26 +325,26 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       setEnviandoFeedback(false);
 
       setTimeout(() => {
-        showAlert('error', 'Erro de conexão ao enviar feedback');
+        showAlert('error', 'Erro de conex├úo ao enviar feedback');
       }, 100);
     }
   };
 
   useEffect(() => {
-    console.log('Componente montado, usuário:', user);
+    console.log('Componente montado, usu├írio:', user);
     if (user?.email) {
       fetchMeusChamados();
     } else {
-      setError('Usuário não encontrado');
+      setError('Usu├írio n├úo encontrado');
     }
   }, [user]);
 
   const formatDate = (dateString: string) => {
     try {
-      if (!dateString) return 'Data não disponível';
+      if (!dateString) return 'Data n├úo dispon├¡vel';
       return new Date(dateString).toLocaleString('pt-BR');
     } catch (error) {
-      return 'Data inválida';
+      return 'Data inv├ílida';
     }
   };
 
@@ -412,20 +412,20 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
   };
 
   const getPrioridadeTexto = (prioridade: number) => {
-    const textos: Record<number, string> = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Urgente' };
-    return textos[prioridade] || 'Não definida';
+    const textos: Record<number, string> = { 1: 'Baixa', 2: 'M├®dia', 3: 'Alta', 4: 'Urgente' };
+    return textos[prioridade] || 'N├úo definida';
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       {/* MODAL PRINCIPAL */}
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-        {/* CABEÇALHO FIXO */}
+        {/* CABE├çALHO FIXO */}
         <div className="bg-gray-900 text-white p-6 rounded-t-lg flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Meus Chamados</h2>
-              <span className="text-orange-400">| Histórico de Solicitações</span>
+              <span className="text-orange-400">| Hist├│rico de Solicita├º├Áes</span>
             </div>
             <Button
               onClick={onClose}
@@ -438,13 +438,13 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
           </div>
         </div>
 
-        {/* CONTEÚDO ROLÁVEL */}
+        {/* CONTE├ÜDO ROL├üVEL */}
         <div className="p-6 overflow-y-auto flex-1">
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-gray-100 text-xs rounded">
-              <strong>Debug:</strong> Usuário: {user?.email || 'Não logado'} | 
+              <strong>Debug:</strong> Usu├írio: {user?.email || 'N├úo logado'} | 
               Chamados: {chamados.length} | 
-              Loading: {isLoading ? 'Sim' : 'Não'} | 
+              Loading: {isLoading ? 'Sim' : 'N├úo'} | 
               Erro: {error || 'Nenhum'}
             </div>
           )}
@@ -482,7 +482,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                     Nenhum chamado encontrado
                   </h3>
                   <p className="text-gray-500">
-                    Você ainda não abriu nenhum chamado
+                    Voc├¬ ainda n├úo abriu nenhum chamado
                   </p>
                 </div>
               ) : (
@@ -499,7 +499,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                           </span>
                           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(chamado.descricao_status_chamado || '')}`}>
                             {getStatusIcon(chamado.descricao_status_chamado || '')}
-                            {chamado.descricao_status_chamado || 'Status não informado'}
+                            {chamado.descricao_status_chamado || 'Status n├úo informado'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -512,10 +512,10 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                       <div className="grid md:grid-cols-2 gap-4 text-sm mb-3">
                         <div>
                           <p className="text-gray-600">
-                            <strong>Categoria:</strong> {chamado.descricao_categoria_chamado || 'Não informado'}
+                            <strong>Categoria:</strong> {chamado.descricao_categoria_chamado || 'N├úo informado'}
                           </p>
                           <p className="text-gray-600">
-                            <strong>Problema:</strong> {chamado.descricao_problema_chamado || 'Não informado'}
+                            <strong>Problema:</strong> {chamado.descricao_problema_chamado || 'N├úo informado'}
                           </p>
                         </div>
                         <div>
@@ -548,7 +548,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                               ) : (
                                 <>
                                   <CheckCircle className="w-4 h-4 mr-1" />
-                                  🤖 Ver Solução IA
+                                  ­ƒñû Ver Solu├º├úo IA
                                 </>
                               )}
                             </Button>
@@ -556,7 +556,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                           
                           {chamado.descricao_status_chamado === 'Aguardando Resposta' && (
                             <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
-                              💡 Solução disponível!
+                              ­ƒÆí Solu├º├úo dispon├¡vel!
                             </span>
                           )}
                         </div>
@@ -584,7 +584,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
       {selectedChamado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9998] p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-            {/* CABEÇALHO FIXO */}
+            {/* CABE├çALHO FIXO */}
             <div className="bg-gray-800 text-white p-4 rounded-t-lg flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">
@@ -601,14 +601,14 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </div>
             </div>
 
-            {/* CONTEÚDO ROLÁVEL */}
+            {/* CONTE├ÜDO ROL├üVEL */}
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedChamado.descricao_status_chamado || '')}`}>
                     {getStatusIcon(selectedChamado.descricao_status_chamado || '')}
-                    {selectedChamado.descricao_status_chamado || 'Status não informado'}
+                    {selectedChamado.descricao_status_chamado || 'Status n├úo informado'}
                   </span>
                 </div>
                 <div>
@@ -619,10 +619,10 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                 </div>
               </div>
 
-              {/* MOTIVO DE REPROVAÇÃO */}
+              {/* MOTIVO DE REPROVA├ç├âO */}
               {selectedChamado.descricao_status_chamado === 'Rejeitado' && selectedChamado.motivo_reprovacao && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Motivo da Reprovação</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Motivo da Reprova├º├úo</label>
                   <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
                     <div className="flex items-start gap-3">
                       <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -636,24 +636,24 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
 
               {selectedChamado.titulo_chamado && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">T├¡tulo</label>
                   <p className="text-gray-600 font-medium">{selectedChamado.titulo_chamado}</p>
                 </div>
               )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                <p className="text-gray-600">{selectedChamado.descricao_categoria_chamado || 'Não informado'}</p>
+                <p className="text-gray-600">{selectedChamado.descricao_categoria_chamado || 'N├úo informado'}</p>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Problema</label>
-                <p className="text-gray-600">{selectedChamado.descricao_problema_chamado || 'Não informado'}</p>
+                <p className="text-gray-600">{selectedChamado.descricao_problema_chamado || 'N├úo informado'}</p>
               </div>
 
               {selectedChamado.descricao_detalhada && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição Detalhada</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descri├º├úo Detalhada</label>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
                       {selectedChamado.descricao_detalhada}
@@ -672,7 +672,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               
               {selectedChamado.data_resolucao && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data de Resolução</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Data de Resolu├º├úo</label>
                   <p className="text-gray-600 flex items-center gap-1">
                     <CheckCircle className="w-4 h-4" />
                     {formatDate(selectedChamado.data_resolucao)}
@@ -693,12 +693,12 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                     {loadingSolucao ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Buscando Solução...
+                        Buscando Solu├º├úo...
                       </>
                     ) : (
                       <>
                         <CheckCircle className="w-5 h-5 mr-2" />
-                        🤖 Ver Solução da IA
+                        ­ƒñû Ver Solu├º├úo da IA
                       </>
                     )}
                   </Button>
@@ -709,15 +709,15 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
         </div>
       )}
 
-      {/* MODAL DE SOLUÇÃO IA */}
+      {/* MODAL DE SOLU├ç├âO IA */}
       {showSolucaoIA && solucaoIA && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col">
-            {/* CABEÇALHO FIXO */}
+            {/* CABE├çALHO FIXO */}
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold">🤖 Solução Sugerida pela IA</h3>
+                  <h3 className="text-2xl font-bold">­ƒñû Solu├º├úo Sugerida pela IA</h3>
                   <p className="text-blue-100 mt-1">Siga os passos abaixo para resolver seu problema</p>
                 </div>
                 <Button
@@ -734,19 +734,19 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               </div>
             </div>
             
-            {/* CONTEÚDO ROLÁVEL */}
+            {/* CONTE├ÜDO ROL├üVEL */}
             <div className="p-6 space-y-6 overflow-y-auto flex-1">
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-2">📋 Sobre este chamado:</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">­ƒôï Sobre este chamado:</h4>
                 <p className="text-sm text-gray-600">
-                  Chamado #{solucaoIA.fk_chamados_id_chamado} • 
-                  Solução gerada em {formatDate(solucaoIA.data_resposta)}
+                  Chamado #{solucaoIA.fk_chamados_id_chamado} ÔÇó 
+                  Solu├º├úo gerada em {formatDate(solucaoIA.data_resposta)}
                 </p>
               </div>
 
               <div>
                 <label className="block text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  💡 Instruções para resolver o problema:
+                  ­ƒÆí Instru├º├Áes para resolver o problema:
                 </label>
                 <div className="bg-white border-2 border-blue-200 rounded-lg p-6 text-gray-800 shadow-inner prose prose-sm max-w-none">
                   <ReactMarkdown>
@@ -758,18 +758,18 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
               <div className="border-t-2 border-gray-200 pt-6">
                 <div className="text-center mb-6">
                   <h4 className="text-xl font-bold text-gray-900 mb-2">
-                    🤔 A solução funcionou para você?
+                    ­ƒñö A solu├º├úo funcionou para voc├¬?
                   </h4>
                   <p className="text-gray-600">
-                    Sua resposta nos ajuda a melhorar e define o próximo passo do seu chamado.
+                    Sua resposta nos ajuda a melhorar e define o pr├│ximo passo do seu chamado.
                   </p>
                 </div>
                 
                 <div className="mb-4 p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-800 text-center">
-                    <strong>📌 O que acontece depois:</strong><br />
-                    • <strong>"Deu Certo"</strong>: Seu chamado será marcado como resolvido e fechado automaticamente<br />
-                    • <strong>"Não Funcionou"</strong>: Seu chamado será encaminhado para um analista humano que entrará em contato
+                    <strong>­ƒôî O que acontece depois:</strong><br />
+                    ÔÇó <strong>"Deu Certo"</strong>: Seu chamado ser├í marcado como resolvido e fechado automaticamente<br />
+                    ÔÇó <strong>"N├úo Funcionou"</strong>: Seu chamado ser├í encaminhado para um analista humano que entrar├í em contato
                   </p>
                 </div>
 
@@ -784,7 +784,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                     ) : (
                       <CheckCircle className="w-6 h-6 mr-2" />
                     )}
-                    ✅ Deu Certo!
+                    Ô£à Deu Certo!
                   </Button>
                   
                   <Button
@@ -798,7 +798,7 @@ export const MeusChamadosPopup = ({ onClose }: MeusChamadosPopupProps) => {
                     ) : (
                       <XCircle className="w-6 h-6 mr-2" />
                     )}
-                    ❌ Não Funcionou
+                    ÔØî N├úo Funcionou
                   </Button>
                 </div>
               </div>

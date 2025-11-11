@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, CheckCircle, AlertTriangle, Clock, Calendar, Search, TrendingUp, X, ArrowUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ResolverChamadoPopup } from './ResolverChamadoPopup';
 
 interface Chamado {
   id_chamado: number;
@@ -45,8 +46,115 @@ export const TicketsTable = () => {
   const [showConfirmResolverModal, setShowConfirmResolverModal] = useState(false);
   const [showConfirmResolverEscaladoModal, setShowConfirmResolverEscaladoModal] = useState(false);
   const [showConfirmEscalarModal, setShowConfirmEscalarModal] = useState(false);
+  const [showResolverPopup, setShowResolverPopup] = useState(false);
   const [chamadoToResolve, setChamadoToResolve] = useState<number | null>(null);
+
+  // ============================================================================
+  // ALERTBOX PERSONALIZADO - Configuração e Helpers
+  // ============================================================================
+
+  // MutationObserver para forçar z-index do alertbox
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.id = 'alertbox-force-zindex-tickets';
+    style.innerHTML = `
+      .alertBoxBody,
+      .alertBoxBody *,
+      div[class*="alert"],
+      div[id*="alert"] {
+        z-index: 2147483647 !important;
+      }
+    `;
+    
+    const oldStyle = document.getElementById('alertbox-force-zindex-tickets');
+    if (!oldStyle) {
+      document.head.appendChild(style);
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            const alertElements = [
+              node.querySelector('.alertBoxBody'),
+              node.querySelector('[class*="alertBox"]'),
+              node.querySelector('[id*="alertBox"]'),
+              node.classList?.contains('alertBoxBody') ? node : null,
+            ].filter(Boolean);
+
+            alertElements.forEach((el) => {
+              if (el instanceof HTMLElement) {
+                el.style.zIndex = '2147483647';
+                el.style.position = 'fixed';
+                el.style.top = '0';
+                el.style.left = '0';
+                el.style.width = '100%';
+                el.style.height = '100%';
+                
+                const children = el.querySelectorAll('*');
+                children.forEach((child) => {
+                  if (child instanceof HTMLElement) {
+                    child.style.zIndex = '2147483647';
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // Função auxiliar para exibir alertas
+  const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
+    if (typeof window !== 'undefined' && (window as any).alertbox) {
+      const config = {
+        success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
+        error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
+        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' },
+        info: { alertIcon: 'info' as const, title: 'Informação', themeColor: '#0ea5e9', btnColor: '#38bdf8' },
+      };
+
+      (window as any).alertbox.render({
+        ...config[type],
+        message,
+        btnTitle: 'OK',
+        border: true,
+      });
+
+      setTimeout(() => {
+        const alertBox = document.querySelector('.alertBoxBody') || 
+                        document.querySelector('[class*="alertBox"]') ||
+                        document.querySelector('[id*="alertBox"]');
+        
+        if (alertBox instanceof HTMLElement) {
+          alertBox.style.zIndex = '2147483647';
+          alertBox.style.position = 'fixed';
+          const allElements = alertBox.querySelectorAll('*');
+          allElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              el.style.zIndex = '2147483647';
+            }
+          });
+        }
+      }, 50);
+    }
+  };
+
+  // ============================================================================
+  // ESTADOS E VARIÁVEIS
+  // ============================================================================
   const [chamadoEscaladoToResolve, setChamadoEscaladoToResolve] = useState<number | null>(null);
+  const [chamadoParaResolver, setChamadoParaResolver] = useState<Chamado | null>(null);
   
   const [motivoEscalar, setMotivoEscalar] = useState('');
   const [processando, setProcessando] = useState(false);
@@ -131,8 +239,24 @@ export const TicketsTable = () => {
   };
 
   const handleConfirmarResolverEscalado = (idChamado: number) => {
-    setChamadoEscaladoToResolve(idChamado);
-    setShowConfirmResolverEscaladoModal(true);
+    // Buscar o chamado escalado completo
+    const chamadoEscalado = chamadosEscalados.find(c => c.id_chamado === idChamado);
+    if (chamadoEscalado) {
+      // Converter para formato Chamado
+      const chamadoParaPopup: Chamado = {
+        id_chamado: chamadoEscalado.id_chamado,
+        descricao_categoria_chamado: chamadoEscalado.descricao_categoria_chamado,
+        descricao_problema_chamado: chamadoEscalado.descricao_problema_chamado,
+        descricao_status_chamado: chamadoEscalado.descricao_status_chamado,
+        prioridade_chamado: chamadoEscalado.prioridade_chamado,
+        data_abertura: chamadoEscalado.data_abertura,
+        usuario_abertura: chamadoEscalado.usuario_abertura,
+        email_usuario: '',
+        titulo_chamado: chamadoEscalado.titulo_chamado,
+      };
+      setChamadoParaResolver(chamadoParaPopup);
+      setShowResolverPopup(true);
+    }
   };
 
   const resolverChamadoEscalado = async () => {
@@ -150,16 +274,16 @@ export const TicketsTable = () => {
       });
 
       if (response.ok) {
-        alert('Chamado escalado resolvido com sucesso!');
+        showAlert('success', 'Chamado escalado resolvido com sucesso!');
         await fetchChamadosEscalados();
         await fetchChamados();
       } else {
         const errorData = await response.json();
-        alert(`Erro: ${errorData.message}`);
+        showAlert('error', errorData.message || 'Erro ao resolver chamado escalado');
       }
     } catch (error) {
       console.error('Erro ao resolver chamado escalado:', error);
-      alert('Erro de conexão');
+      showAlert('error', 'Erro de conexão ao resolver chamado escalado');
     } finally {
       setProcessando(false);
       setShowConfirmResolverEscaladoModal(false);
@@ -168,8 +292,12 @@ export const TicketsTable = () => {
   };
 
   const handleConfirmarResolver = (idChamado: number) => {
-    setChamadoToResolve(idChamado);
-    setShowConfirmResolverModal(true);
+    // Buscar o chamado completo
+    const chamado = chamados.find(c => c.id_chamado === idChamado);
+    if (chamado) {
+      setChamadoParaResolver(chamado);
+      setShowResolverPopup(true);
+    }
   };
 
   const marcarComoResolvido = async () => {
@@ -187,17 +315,17 @@ export const TicketsTable = () => {
       });
 
       if (response.ok) {
-        alert('Chamado marcado como resolvido com sucesso!');
+        showAlert('success', 'Chamado marcado como resolvido com sucesso!');
         await fetchChamados();
         setSelectedChamado(null);
         setShowDetalhes(false);
       } else {
         const errorData = await response.json();
-        alert(`Erro: ${errorData.message}`);
+        showAlert('error', errorData.message || 'Erro ao resolver chamado');
       }
     } catch (error) {
       console.error('Erro ao resolver chamado:', error);
-      alert('Erro de conexão');
+      showAlert('error', 'Erro de conexão ao resolver chamado');
     } finally {
       setProcessando(false);
       setShowConfirmResolverModal(false);
@@ -207,7 +335,7 @@ export const TicketsTable = () => {
 
   const handleConfirmarEscalar = () => {
     if (!motivoEscalar.trim() || motivoEscalar.trim().length < 10) {
-      alert('Motivo do escalonamento deve ter pelo menos 10 caracteres');
+      showAlert('warning', 'Motivo do escalonamento deve ter pelo menos 10 caracteres');
       return;
     }
     setShowEscalarModal(false);
@@ -230,7 +358,7 @@ export const TicketsTable = () => {
       });
 
       if (response.ok) {
-        alert('Chamado escalado para gerente com sucesso!');
+        showAlert('success', 'Chamado escalado para gerente com sucesso!');
         await fetchChamados();
         setShowConfirmEscalarModal(false);
         setSelectedChamado(null);
@@ -238,11 +366,11 @@ export const TicketsTable = () => {
         setMotivoEscalar('');
       } else {
         const errorData = await response.json();
-        alert(`Erro: ${errorData.message}`);
+        showAlert('error', errorData.message || 'Erro ao escalar chamado');
       }
     } catch (error) {
       console.error('Erro ao escalar chamado:', error);
-      alert('Erro de conexão');
+      showAlert('error', 'Erro de conexão ao escalar chamado');
     } finally {
       setProcessando(false);
     }
@@ -891,21 +1019,49 @@ export const TicketsTable = () => {
         )}
       </div>
 
-            {/* Botão Voltar ao Topo */}
-          {showScrollToTop && (
-            <div className="fixed bottom-6 left-20 flex flex-col items-center z-50">
-              <button
-                onClick={scrollToTop}
-                className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 mb-2"
-                aria-label="Voltar ao topo"
-              >
-                <ArrowUp className="w-5 h-5" />
-              </button>
-              <span className="text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">
-                Voltar ao topo
-              </span>
-            </div>
-          )}
-              </>
+      {/* Botão Voltar ao Topo */}
+      {showScrollToTop && (
+        <div className="fixed bottom-6 left-20 flex flex-col items-center z-50">
+          <button
+            onClick={scrollToTop}
+            className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 mb-2"
+            aria-label="Voltar ao topo"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </button>
+          <span className="text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">
+            Voltar ao topo
+          </span>
+        </div>
+      )}
+
+      {/* Popup: Resolver Chamado com Relatório */}
+      {showResolverPopup && chamadoParaResolver && (
+        <ResolverChamadoPopup
+          chamado={{
+            id_chamado: chamadoParaResolver.id_chamado,
+            descricao_categoria_chamado: chamadoParaResolver.descricao_categoria_chamado,
+            descricao_problema_chamado: chamadoParaResolver.descricao_problema_chamado,
+            descricao_status_chamado: chamadoParaResolver.descricao_status_chamado, // ✅ ADICIONADO
+            id_categoria_chamado: undefined,
+            id_problema_chamado: undefined,
+            id_usuario_abertura: undefined,
+          }}
+          onClose={() => {
+            setShowResolverPopup(false);
+            setChamadoParaResolver(null);
+          }}
+          onSuccess={() => {
+            setShowResolverPopup(false);
+            setChamadoParaResolver(null);
+            fetchChamados();
+            fetchChamadosEscalados();
+            setSelectedChamado(null);
+            setShowDetalhes(false);
+            showAlert('success', 'Chamado resolvido com sucesso!');
+          }}
+        />
+      )}
+    </>
   );
 };

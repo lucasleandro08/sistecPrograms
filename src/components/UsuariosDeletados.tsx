@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Users, RotateCcw, Search, Calendar, User, FileText, UserX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Header } from '@/components/Header';
@@ -32,6 +42,120 @@ export const UsuariosDeletados = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const { user } = useAuth();
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [restoreCandidate, setRestoreCandidate] = useState<UsuarioDeletado | null>(null);
+
+  const ALERTBOX_STYLE_ID = 'alertbox-force-zindex-usuarios-deletados';
+
+  const ALERT_STYLES = {
+    success: { alertIcon: 'success', title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
+    error: { alertIcon: 'error', title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
+    warning: { alertIcon: 'warning', title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' },
+    info: { alertIcon: 'info', title: 'Informação', themeColor: '#3b82f6', btnColor: '#60a5fa' },
+  } as const;
+
+  const ACTION_ALERT_STYLES = {
+    restaurar: {
+      alertIcon: 'success',
+      title: 'Usuário restaurado!',
+      themeColor: '#15803d',
+      btnColor: '#16a34a',
+    },
+  } as const;
+
+  const setupAlertBoxZIndex = () => {
+    if (typeof document === 'undefined') return () => undefined;
+
+    let styleElement = document.getElementById(ALERTBOX_STYLE_ID) as HTMLStyleElement | null;
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = ALERTBOX_STYLE_ID;
+      styleElement.innerHTML = `
+        .alertBoxBody,
+        .alertBoxBody *,
+        div[class*="alert"],
+        div[id*="alert"] {
+          z-index: 2147483647 !important;
+        }
+      `;
+      document.head.appendChild(styleElement);
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            const elements = [
+              node.querySelector('.alertBoxBody'),
+              node.querySelector('[class*="alertBox"]'),
+              node.querySelector('[id*="alertBox"]'),
+              node.classList.contains('alertBoxBody') ? node : null,
+            ].filter(Boolean) as HTMLElement[];
+
+            elements.forEach((element) => {
+              element.style.zIndex = '2147483647';
+              element.style.position = 'fixed';
+              element.querySelectorAll('*').forEach((child) => {
+                if (child instanceof HTMLElement) child.style.zIndex = '2147483647';
+              });
+            });
+          }
+        });
+      });
+    });
+
+    if (document.body) {
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      observer.disconnect();
+      document.getElementById(ALERTBOX_STYLE_ID)?.remove();
+    };
+  };
+
+  const renderAlertWithConfig = (
+    config: { alertIcon: string; title: string; themeColor: string; btnColor: string },
+    message: string
+  ) => {
+    if (typeof window !== 'undefined' && (window as any).alertbox) {
+      (window as any).alertbox.render({
+        ...config,
+        message,
+        btnTitle: 'Ok',
+        border: true,
+      });
+
+      setTimeout(() => {
+        const alertBox =
+          document.querySelector('.alertBoxBody') ||
+          document.querySelector('[class*="alertBox"]') ||
+          document.querySelector('[id*="alertBox"]');
+        if (alertBox instanceof HTMLElement) {
+          alertBox.style.zIndex = '2147483647';
+          alertBox.style.position = 'fixed';
+          alertBox.querySelectorAll('*').forEach((child) => {
+            if (child instanceof HTMLElement) child.style.zIndex = '2147483647';
+          });
+        }
+      }, 50);
+    } else {
+      alert(message);
+    }
+  };
+
+  const showAlert = (type: keyof typeof ALERT_STYLES, message: string) => {
+    renderAlertWithConfig(ALERT_STYLES[type], message);
+  };
+
+  const showActionAlert = (message: string) => {
+    renderAlertWithConfig(ACTION_ALERT_STYLES.restaurar, message);
+  };
+
+  useEffect(() => {
+    const cleanup = setupAlertBoxZIndex();
+    return cleanup;
+  }, []);
 
   // Buscar usuários deletados
   const fetchUsuariosDeletados = async () => {
@@ -53,22 +177,27 @@ export const UsuariosDeletados = () => {
         setUsuariosFiltrados(data.data || []);
       } else {
         const errorData = await response.json();
-        setError(errorData.message || 'Erro ao carregar usuários deletados');
+        const message = errorData.message || 'Erro ao carregar usuários deletados';
+        setError(message);
+        showAlert('error', message);
       }
     } catch (error) {
       console.error('Erro ao buscar usuários deletados:', error);
       setError('Erro de conexão ao carregar usuários deletados');
+      showAlert('error', 'Erro de conexão ao carregar usuários deletados');
     } finally {
       setIsLoading(false);
     }
   };
 
   // Restaurar usuário
-  const handleRestaurar = async (idBackup: number, nomeUsuario: string) => {
-    if (!confirm(`Tem certeza que deseja restaurar o usuário "${nomeUsuario}"?`)) {
-      return;
-    }
-    
+  const handleConfirmRestore = async () => {
+    if (!restoreCandidate) return;
+
+    const { id_backup: idBackup, nome_usuario: nomeUsuario } = restoreCandidate;
+    setIsConfirmDialogOpen(false);
+    setRestoreCandidate(null);
+
     try {
       setIsLoading(true);
       
@@ -81,18 +210,28 @@ export const UsuariosDeletados = () => {
       });
 
       if (response.ok) {
-        alert(`Usuário "${nomeUsuario}" restaurado com sucesso!`);
+        showActionAlert(`Usuário "${nomeUsuario}" restaurado com sucesso!`);
         fetchUsuariosDeletados();
       } else {
         const errorData = await response.json();
-        alert(`Erro: ${errorData.message}`);
+        showAlert('error', `Erro: ${errorData.message}`);
       }
     } catch (error) {
       console.error('Erro ao restaurar usuário:', error);
-      alert('Erro de conexão ao restaurar usuário');
+      showAlert('error', 'Erro de conexão ao restaurar usuário');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenRestoreDialog = (usuario: UsuarioDeletado) => {
+    setRestoreCandidate(usuario);
+    setIsConfirmDialogOpen(true);
+  };
+
+  const handleCancelRestore = () => {
+    setIsConfirmDialogOpen(false);
+    setRestoreCandidate(null);
   };
 
   // Filtrar usuários
@@ -299,7 +438,7 @@ export const UsuariosDeletados = () => {
                           {/* Botão de Restaurar */}
                           {usuario.status_backup === 'ATIVO' && (
                             <Button
-                              onClick={() => handleRestaurar(usuario.id_backup, usuario.nome_usuario)}
+                              onClick={() => handleOpenRestoreDialog(usuario)}
                               variant="outline"
                               size="sm"
                               className="w-full text-green-600 hover:text-green-800 hover:bg-green-50 text-xs sm:text-sm"
@@ -401,7 +540,7 @@ export const UsuariosDeletados = () => {
                               <td className="px-4 xl:px-6 py-4 text-sm font-medium">
                                 {usuario.status_backup === 'ATIVO' && (
                                   <Button
-                                    onClick={() => handleRestaurar(usuario.id_backup, usuario.nome_usuario)}
+                                    onClick={() => handleOpenRestoreDialog(usuario)}
                                     variant="outline"
                                     size="sm"
                                     className="text-green-600 hover:text-green-800 hover:bg-green-50 whitespace-nowrap"
@@ -424,6 +563,41 @@ export const UsuariosDeletados = () => {
           </Card>
         </main>
       </div>
+      <AlertDialog
+        open={isConfirmDialogOpen}
+        onOpenChange={(open) => {
+          setIsConfirmDialogOpen(open);
+          if (!open) {
+            setRestoreCandidate(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 text-green-600">
+              <RotateCcw className="w-5 h-5" />
+              <AlertDialogTitle className="text-lg font-semibold text-gray-900">
+                Restaurar usuário
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm text-gray-600">
+              Tem certeza de que deseja restaurar o usuário{' '}
+              <span className="font-semibold text-gray-900">{restoreCandidate?.nome_usuario}</span>? Essa ação reativará o acesso do usuário com todas as permissões anteriores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelRestore} className="border-gray-300 text-gray-700">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRestore}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Confirmar restauração
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

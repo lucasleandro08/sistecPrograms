@@ -20,7 +20,11 @@ const formSchema = z.object({
   cargo: z.string().min(1, 'Cargo é obrigatório'),
   setor: z.string().min(1, 'Setor é obrigatório'),
   id_perfil_usuario: z.string().min(1, 'Nível de acesso é obrigatório'),
-  senha: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
+  senha: z
+    .string()
+    .min(6, 'Senha deve ter pelo menos 6 caracteres')
+    .or(z.literal(''))
+    .optional(),
 });
 
 
@@ -126,32 +130,56 @@ export const CadastrarUsuarioForm = ({
   }, []);
 
 
-  const showAlert = (type: 'success' | 'error' | 'warning' | 'info', message: string) => {
+  const ALERT_STYLES = {
+    success: { alertIcon: 'success', title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
+    error: { alertIcon: 'error', title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
+    warning: { alertIcon: 'warning', title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' },
+    info: { alertIcon: 'info', title: 'Informação', themeColor: '#3b82f6', btnColor: '#60a5fa' },
+  } as const;
+
+  const ACTION_ALERT_STYLES: Record<Mode, { alertIcon: string; title: string; themeColor: string; btnColor: string }> = {
+    cadastrar: {
+      alertIcon: 'success',
+      title: 'Usuário cadastrado com sucesso!',
+      themeColor: '#7c3aed',
+      btnColor: '#8b5cf6',
+    },
+    editar: {
+      alertIcon: 'info',
+      title: 'Usuário atualizado!',
+      themeColor: '#2563eb',
+      btnColor: '#3b82f6',
+    },
+    desativar: {
+      alertIcon: 'warning',
+      title: 'Usuário desativado!',
+      themeColor: '#dc2626',
+      btnColor: '#ef4444',
+    },
+  };
+
+  const renderAlertWithConfig = (
+    config: { alertIcon: string; title: string; themeColor: string; btnColor: string },
+    message: string
+  ) => {
     if (typeof window !== 'undefined' && (window as any).alertbox) {
-      const config = {
-        success: { alertIcon: 'success' as const, title: 'Sucesso!', themeColor: '#16a34a', btnColor: '#22c55e' },
-        error: { alertIcon: 'error' as const, title: 'Erro!', themeColor: '#dc2626', btnColor: '#ef4444' },
-        warning: { alertIcon: 'warning' as const, title: 'Atenção!', themeColor: '#ea580c', btnColor: '#f97316' },
-        info: { alertIcon: 'info' as const, title: 'Informação', themeColor: '#3b82f6', btnColor: '#60a5fa' }
-      };
-      
       (window as any).alertbox.render({
-        ...config[type],
-        message: message,
+        ...config,
+        message,
         btnTitle: 'Ok',
-        border: true
+        border: true,
       });
 
-
       setTimeout(() => {
-        const alertBox = document.querySelector('.alertBoxBody') || 
-                        document.querySelector('[class*="alertBox"]') ||
-                        document.querySelector('[id*="alertBox"]');
-        
+        const alertBox =
+          document.querySelector('.alertBoxBody') ||
+          document.querySelector('[class*="alertBox"]') ||
+          document.querySelector('[id*="alertBox"]');
+
         if (alertBox instanceof HTMLElement) {
           alertBox.style.zIndex = '2147483647';
           alertBox.style.position = 'fixed';
-          
+
           const allElements = alertBox.querySelectorAll('*');
           allElements.forEach((el) => {
             if (el instanceof HTMLElement) {
@@ -160,10 +188,17 @@ export const CadastrarUsuarioForm = ({
           });
         }
       }, 50);
-      
     } else {
       alert(message);
     }
+  };
+
+  const showAlert = (type: keyof typeof ALERT_STYLES, message: string) => {
+    renderAlertWithConfig(ALERT_STYLES[type], message);
+  };
+
+  const showActionAlert = (currentMode: Mode, message: string) => {
+    renderAlertWithConfig(ACTION_ALERT_STYLES[currentMode], message);
   };
 
 
@@ -341,7 +376,7 @@ export const CadastrarUsuarioForm = ({
     
     console.log('ID do usuário sendo editado:', userData.id_usuario);
     
-    const updateData = {
+    const updateData: Record<string, unknown> = {
       nome_usuario: `${data.nome} ${data.sobrenome}`,
       setor_usuario: data.setor,
       cargo_usuario: data.cargo,
@@ -349,6 +384,10 @@ export const CadastrarUsuarioForm = ({
       tel_usuarios: data.telefone,
       id_perfil_usuario: parseInt(data.id_perfil_usuario),
     };
+
+    if (data.senha && data.senha.trim().length >= 6) {
+      updateData.senha = data.senha.trim();
+    }
 
 
     const response = await fetch(`http://localhost:3001/api/users/${userData.id_usuario}`, {
@@ -456,8 +495,8 @@ export const CadastrarUsuarioForm = ({
 
 
       setTimeout(() => {
-        showAlert('success', successMessage);
-        
+        showActionAlert(mode, successMessage);
+
         if (onSuccess) {
           onSuccess();
         }
@@ -747,16 +786,22 @@ export const CadastrarUsuarioForm = ({
                 </div>
 
 
-                {mode === 'cadastrar' && (
+                {(mode === 'cadastrar' || mode === 'editar') && (
                   <div>
-                    <Label htmlFor="senha" className="text-purple-600">Senha Inicial</Label>
+                    <Label htmlFor="senha" className="text-purple-600">
+                      {mode === 'cadastrar' ? 'Senha Inicial' : 'Nova Senha'}
+                    </Label>
                     <div className="relative mt-1">
                       <Input
                         id="senha"
                         type={showPassword ? 'text' : 'password'}
                         {...register('senha')}
-                        placeholder="Senha gerada automaticamente"
-                        readOnly
+                        placeholder={
+                          mode === 'cadastrar'
+                            ? 'Senha gerada automaticamente'
+                            : 'Deixe em branco para manter a senha atual'
+                        }
+                        readOnly={mode === 'cadastrar'}
                         className="pr-10"
                       />
                       <button
@@ -775,7 +820,9 @@ export const CadastrarUsuarioForm = ({
                       <p className="text-red-500 text-sm mt-1">{errors.senha.message}</p>
                     )}
                     <p className="text-gray-500 text-xs mt-1">
-                      Senha: PrimeiroNome + últimos 4 dígitos do telefone
+                      {mode === 'cadastrar'
+                        ? 'Senha: PrimeiroNome + últimos 4 dígitos do telefone'
+                        : 'Informe nova senha (mínimo 6 caracteres) ou deixe em branco para manter a atual'}
                     </p>
                   </div>
                 )}

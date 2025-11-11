@@ -1,3 +1,35 @@
+/**
+ * @fileoverview Header Component - Barra de navegação superior
+ * 
+ * Componente responsável pela navegação principal do sistema, incluindo:
+ * - Menu mobile responsivo
+ * - Sistema de notificações em tempo real
+ * - Painel de perfil do usuário
+ * - Modal de confirmação de logout
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <Header />
+ * ```
+ * 
+ * Responsividade:
+ * - Mobile (<768px): Menu hamburger, logo pequeno, ícones compactos
+ * - Tablet (768-1024px): Transição para layout desktop
+ * - Desktop (>1024px): Header full com todos os elementos visíveis
+ * 
+ * Nielsen Heuristics:
+ * #1 - Visibility of system status: Contador de notificações não lidas
+ * #2 - Match between system and real world: Ícones intuitivos
+ * #3 - User control and freedom: Confirmação de logout
+ * #5 - Error prevention: Modal de confirmação antes de sair
+ * #6 - Recognition rather than recall: Nome e perfil do usuário visíveis
+ * #7 - Flexibility and efficiency: Click fora fecha dropdowns
+ * #8 - Aesthetic and minimalist design: Interface limpa
+ * #9 - Help users recognize errors: Feedback visual de ações
+ * #10 - Help and documentation: Labels descritivos em botões
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bell, Menu, User, LogOut, AlertTriangle, X, CheckCheck, 
@@ -11,28 +43,144 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// ============================================================================
+// CONSTANTES
+// ============================================================================
+
+/**
+ * Configuração do Toast Container
+ */
+const TOAST_CONFIG = Object.freeze({
+  POSITION: 'top-right' as const,
+  AUTO_CLOSE: 3000,
+  HIDE_PROGRESS_BAR: false,
+  NEWEST_ON_TOP: true,
+  CLOSE_ON_CLICK: true,
+  PAUSE_ON_HOVER: true,
+  THEME: 'light' as const,
+  STACKED: true
+});
+
+/**
+ * Timing para logout
+ */
+const LOGOUT_DELAY_MS = 500;
+
+/**
+ * Mapeamento de tipos de notificação para ícones
+ */
+const NOTIFICATION_ICONS = Object.freeze({
+  success: CheckCircle,
+  error: XCircle,
+  warning: AlertTriangle,
+  info: Info
+});
+
+/**
+ * Cores dos ícones por tipo
+ */
+const ICON_COLORS = Object.freeze({
+  success: 'text-green-600',
+  error: 'text-red-600',
+  warning: 'text-orange-600',
+  info: 'text-blue-600'
+});
+
+/**
+ * Classes de fundo por tipo (quando não lida)
+ */
+const BG_COLORS = Object.freeze({
+  success: 'bg-green-50 border-l-4 border-green-500',
+  error: 'bg-red-50 border-l-4 border-red-500',
+  warning: 'bg-orange-50 border-l-4 border-orange-500',
+  info: 'bg-blue-50 border-l-4 border-blue-500'
+});
+
+// ============================================================================
+// HELPER FUNCTIONS (PRIVADAS)
+// ============================================================================
+
+/**
+ * Retorna o ícone apropriado para o tipo de notificação
+ * @private
+ * @param {string} tipo - Tipo da notificação (success, error, warning, info)
+ * @returns {JSX.Element} Ícone React
+ */
+const getTipoIcon = (tipo: string): JSX.Element => {
+  const IconComponent = NOTIFICATION_ICONS[tipo as keyof typeof NOTIFICATION_ICONS] || Info;
+  const colorClass = ICON_COLORS[tipo as keyof typeof ICON_COLORS] || ICON_COLORS.info;
+  
+  return <IconComponent className={`w-5 h-5 ${colorClass}`} />;
+};
+
+/**
+ * Retorna a classe de fundo apropriada para a notificação
+ * @private
+ * @param {string} tipo - Tipo da notificação
+ * @param {boolean} lida - Se a notificação foi lida
+ * @returns {string} Classes CSS
+ */
+const getTipoBgColor = (tipo: string, lida: boolean): string => {
+  if (lida) return '';
+  return BG_COLORS[tipo as keyof typeof BG_COLORS] || BG_COLORS.info;
+};
+
+/**
+ * Formata o contador de notificações (max 99+)
+ * @private
+ * @param {number} count - Número de notificações
+ * @returns {string} Contador formatado
+ */
+const formatUnreadCount = (count: number): string => {
+  return count > 99 ? '99+' : count.toString();
+};
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
+/**
+ * Header - Componente de navegação superior
+ * 
+ * Gerencia a navegação principal, notificações e perfil do usuário.
+ * Responsivo para mobile, tablet e desktop.
+ */
 export const Header = () => {
+  // ========== STATES ==========
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [processando, setProcessando] = useState(false);
+  
+  // ========== HOOKS ==========
   const { user, logout } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   
+  // ========== REFS ==========
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  // ========== EFFECTS ==========
+  
+  /**
+   * Fecha dropdowns quando clicar fora
+   * Nielsen Heuristic #7: Flexibility and efficiency of use
+   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Fecha notificações se clicar fora
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setIsNotificationOpen(false);
       }
+      
+      // Fecha perfil se clicar fora
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setIsProfilePanelOpen(false);
       }
     };
 
+    // Só adiciona listener se algum dropdown estiver aberto
     if (isNotificationOpen || isProfilePanelOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
@@ -42,6 +190,12 @@ export const Header = () => {
     };
   }, [isNotificationOpen, isProfilePanelOpen]);
 
+  // ========== HANDLERS ==========
+  
+  /**
+   * Handler para clique em notificação
+   * Marca como lida sem abrir modal
+   */
   const handleNotificationClick = (notification: any) => {
     console.log('🔔 Notificação clicada:', notification);
     
@@ -51,61 +205,61 @@ export const Header = () => {
     }
   };
 
+  /**
+   * Inicia processo de logout
+   * Nielsen Heuristic #3: User control and freedom
+   */
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
   };
 
+  /**
+   * Confirma e executa logout
+   * Nielsen Heuristic #5: Error prevention (confirmação)
+   */
   const handleLogoutConfirm = () => {
     setProcessando(true);
+    
     setTimeout(() => {
       logout();
       setIsProfilePanelOpen(false);
       setShowLogoutConfirm(false);
       setProcessando(false);
-    }, 500);
+    }, LOGOUT_DELAY_MS);
   };
 
-  const getTipoIcon = (tipo: string) => {
-    switch (tipo) {
-      case 'success': 
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'error': 
-        return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'warning': 
-        return <AlertTriangle className="w-5 h-5 text-orange-600" />;
-      default: 
-        return <Info className="w-5 h-5 text-blue-600" />;
-    }
+  /**
+   * Cancela logout e fecha modais
+   */
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirm(false);
+    setIsProfilePanelOpen(false);
   };
 
-  const getTipoBgColor = (tipo: string, lida: boolean) => {
-    if (lida) return '';
-    switch (tipo) {
-      case 'success': return 'bg-green-50 border-l-4 border-green-500';
-      case 'error': return 'bg-red-50 border-l-4 border-red-500';
-      case 'warning': return 'bg-orange-50 border-l-4 border-orange-500';
-      default: return 'bg-blue-50 border-l-4 border-blue-500';
-    }
-  };
-
+  // ========== RENDER ==========
+  
   return (
     <>
+      {/* Toast Container - Nielsen Heuristic #9: Help users recognize errors */}
       <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
+        position={TOAST_CONFIG.POSITION}
+        autoClose={TOAST_CONFIG.AUTO_CLOSE}
+        hideProgressBar={TOAST_CONFIG.HIDE_PROGRESS_BAR}
+        newestOnTop={TOAST_CONFIG.NEWEST_ON_TOP}
+        closeOnClick={TOAST_CONFIG.CLOSE_ON_CLICK}
         rtl={false}
         pauseOnFocusLoss
         draggable
-        pauseOnHover
-        theme="light"
-        stacked
+        pauseOnHover={TOAST_CONFIG.PAUSE_ON_HOVER}
+        theme={TOAST_CONFIG.THEME}
+        stacked={TOAST_CONFIG.STACKED}
       />
 
+      {/* Header fixo - Responsivo para mobile e desktop */}
+      {/* Nielsen Heuristic #8: Aesthetic and minimalist design */}
       <header className="bg-white border-b border-gray-200 fixed top-0 left-0 md:left-64 z-50 w-full md:w-[calc(100%-16rem)]">
         <div className="flex items-center justify-between px-4 md:px-6 py-4">
+          {/* Logo e Menu Mobile - Nielsen Heuristic #2: Match between system and real world */}
           <div className="flex items-center gap-3 md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -247,7 +401,7 @@ export const Header = () => {
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{user?.role}</p>
+                  <p className="text-xs text-gray-500">{user?.perfil?.nome || 'Usuário'}</p>
                 </div>
               </button>
 
@@ -268,7 +422,7 @@ export const Header = () => {
                         <div className="min-w-0">
                           <h3 className="font-semibold text-gray-900 truncate">{user?.name}</h3>
                           <p className="text-sm text-gray-500 truncate">{user?.email}</p>
-                          <p className="text-xs text-orange-600 font-medium">{user?.role}</p>
+                          <p className="text-xs text-orange-600 font-medium">{user?.perfil?.nome || 'Usuário'}</p>
                         </div>
                       </div>
                     </div>
