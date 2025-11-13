@@ -201,21 +201,6 @@ export const CadastrarUsuarioForm = ({
     renderAlertWithConfig(ACTION_ALERT_STYLES[currentMode], message);
   };
 
-
-  useEffect(() => {
-    console.log('=== DEBUG USUÁRIO FORMULÁRIO ===');
-    console.log('Mode:', mode);
-    console.log('Dados do usuário:', user);
-    console.log('UserData recebido:', userData);
-    console.log('Está autenticado?', user ? 'SIM' : 'NÃO');
-    console.log('Email:', user?.email);
-    console.log('Perfil:', user?.perfil?.nome);
-    console.log('Nível de acesso:', user?.perfil?.nivel_acesso);
-    console.log('Motivo atual:', motivoInterno);
-    console.log('===============================');
-  }, [user, userData, mode, motivoInterno]);
-
-
   const PERFIS_ACESSO = [
     { id: 1, nome: 'Usuário', nivel: 1 },
     { id: 2, nome: 'Analista de Suporte', nivel: 2 },
