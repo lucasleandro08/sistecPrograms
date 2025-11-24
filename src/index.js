@@ -1,20 +1,17 @@
 /**
  * @fileoverview Servidor Express Principal - Sistema de Chamados SISTEC
- * 
- * Este módulo configura e inicia o servidor Express com:
+ * * Este módulo configura e inicia o servidor Express com:
  * - Middleware de segurança (CORS, sessões)
  * - Rotas da API (auth, users, chamados, estatísticas)
  * - Documentação Swagger
  * - Health check endpoint
  * - Graceful shutdown
  * - Error handling centralizado
- * 
- * Variáveis de ambiente requeridas:
+ * * Variáveis de ambiente requeridas:
  * - PORT: Porta do servidor (default: 3001)
  * - SESSION_SECRET: Chave secreta para sessões
  * - DATABASE_URL: Connection string do banco (via db.js)
- * 
- * @module index
+ * * @module index
  * @version 1.0.0
  */
 
@@ -52,6 +49,7 @@ const ALLOWED_ORIGINS = Object.freeze([
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:5174', // Vite alternativo
+  'http://localhost:56721', //mobile
   'http://127.0.0.1:5173'  // IP local
 ]);
 
@@ -125,12 +123,27 @@ const LOG_MESSAGES = Object.freeze({
  * @private
  * @returns {Object} Configuração CORS
  */
-const createCorsOptions = () => ({
-  origin: ALLOWED_ORIGINS,
-  credentials: true,
-  methods: ALLOWED_METHODS,
-  allowedHeaders: ALLOWED_HEADERS
-});
+const createCorsOptions = () => {
+  // CORREÇÃO: Em ambiente de desenvolvimento, permite qualquer origem.
+  // Isso é necessário para o Flutter Web rodando em portas aleatórias e 
+  // para testes rápidos via IP no mobile.
+  if (SERVER_CONFIG.ENV === 'development') {
+    return {
+      origin: true, // 'true' reflete a origem da requisição (libera tudo)
+      credentials: true,
+      methods: ALLOWED_METHODS,
+      allowedHeaders: ALLOWED_HEADERS
+    };
+  }
+
+  // Em produção, mantém a lista restrita de origens
+  return {
+    origin: ALLOWED_ORIGINS,
+    credentials: true,
+    methods: ALLOWED_METHODS,
+    allowedHeaders: ALLOWED_HEADERS
+  };
+};
 
 /**
  * Cria configuração de sessão
@@ -210,6 +223,7 @@ const logServerStartup = () => {
  * @param {Express} app - Instância do Express
  */
 const setupMiddlewares = (app) => {
+  // A chamada agora usa a função modificada que verifica o ambiente
   app.use(cors(createCorsOptions()));
   app.use(express.json());
   app.use(session(createSessionConfig()));
